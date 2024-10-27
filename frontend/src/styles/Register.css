@@ -1,0 +1,20 @@
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Center vertically */
+  background-color: #f0f2f5; /* Light background color */
+}
+
+.register-form {
+  background-color: white; /* Solid white background for the form */
+  border-radius: 10px; /* Rounded corners */
+  padding: 2rem; /* Padding inside the box */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Shadow effect */
+  width: 300px; /* Fixed width for the form */
+  text-align: center; /* Center text */
+}
+
+.error-message {
+  color: red; /* Error message color */
+}
