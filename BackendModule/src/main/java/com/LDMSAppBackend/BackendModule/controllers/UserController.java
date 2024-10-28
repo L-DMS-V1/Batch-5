@@ -3,6 +3,7 @@ package com.LDMSAppBackend.BackendModule.controllers;
 import com.LDMSAppBackend.BackendModule.Dtos.JwtToken;
 import com.LDMSAppBackend.BackendModule.Dtos.UserLoginRequestDto;
 import com.LDMSAppBackend.BackendModule.Dtos.UserRegistrationDto;
+import com.LDMSAppBackend.BackendModule.entites.Role;
 import com.LDMSAppBackend.BackendModule.entites.User;
 import com.LDMSAppBackend.BackendModule.security.JwtHelper;
 import com.LDMSAppBackend.BackendModule.services.UserService;
@@ -32,19 +33,24 @@ public class UserController {
     private JwtHelper jwtHelper;
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserRegistrationDto userDto) {
-        User user = new User(userDto.getAccountId(),userDto.getAccountName(),
-                userDto.getUserName(),passwordEncoder.encode(userDto.getPassword()),
-                userDto.getEmail(),userDto.getRole());
-        User response;
-        try{
-            response = userService.addUser(user);
+    public ResponseEntity<?> registerUser (@RequestBody UserRegistrationDto userDto) {
+        Role role;
+        try {
+            role = Role.valueOf(userDto.getRole().toUpperCase().trim());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid role provided: " + userDto.getRole());
         }
-        catch (Exception e)
-        {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("User already exists");
+
+        User user = new User(userDto.getAccountId(), userDto.getAccountName(),
+                userDto.getUserName(), passwordEncoder.encode(userDto.getPassword()),
+                userDto.getEmail(), role.toString());
+
+        try {
+            User response = userService.addUser(user);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
-        return ResponseEntity.ok("User registered successfully");
+        return ResponseEntity.ok("User  registered successfully");
     }
 
     @PostMapping("/login")
@@ -56,7 +62,7 @@ public class UserController {
         }
         if(passwordEncoder.matches(loginRequest.getPassword(), user.getPassword()))
         {
-            String token = jwtHelper.generateToken(loginRequest.getUserName());
+            String token = jwtHelper.generateToken(user);
             return ResponseEntity.status(HttpStatus.OK).body(new JwtToken(token));
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Wrong password");

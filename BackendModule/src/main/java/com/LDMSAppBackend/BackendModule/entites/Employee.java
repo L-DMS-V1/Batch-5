@@ -11,17 +11,9 @@ public @Data class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer employeeId;
 
-    @Column(name="user_name",nullable = false, unique = true,length = 50)
-    private String userName;
-
-    @Column(name="password",nullable = false)
-    private String password;
-
-    @Column(name="email_id",nullable = false,unique = true)
-    private String email;
-
-    @Column(name = "role")
-    private String role;
+    @OneToOne
+    @JoinColumn(name="userName")
+    private User user;
 
     @Column(name="position")
     private String position;
