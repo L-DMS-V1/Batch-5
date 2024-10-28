@@ -9,17 +9,18 @@ import lombok.Data;
 public class CourseRequestForm {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Integer requestId;
 
     @Column(name="course_name",nullable = false)
     private String courseName;
 
-    @Column(name="description")
+
     private String description;
+
     private Integer duration;
 
-    @JoinColumn(name = "manager_id", nullable = false)
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "mangerId")
     private Manager manager;
 
 }

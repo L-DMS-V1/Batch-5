@@ -1,9 +1,12 @@
 package com.LDMSAppBackend.BackendModule.security;
 
 
+import com.LDMSAppBackend.BackendModule.entites.User;
+import com.LDMSAppBackend.BackendModule.services.UserServiceImpl;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +20,9 @@ public class JwtHelper {
     private final String SECRET = "batch5infosysspringboard";
     private final long EXPIRATION_TIME = 5*60*60*1000; // 5 hours
 
+    @Autowired
+    private UserServiceImpl userService;
+
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -25,7 +31,8 @@ public class JwtHelper {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver)
+    {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
@@ -34,9 +41,10 @@ public class JwtHelper {
         return Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody();
     }
 
-    public String generateToken(String username) {
+    public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, username);
+        claims.put("role",user.getRole());
+        return createToken(claims, user.getUsername());
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
@@ -57,6 +65,5 @@ public class JwtHelper {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
-
 }
 
