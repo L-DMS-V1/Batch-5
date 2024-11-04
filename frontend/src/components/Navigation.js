@@ -1,20 +1,23 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Navigation = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
+
+  // Don't show navigation on dashboard pages
+  const isDashboardPage = location.pathname.includes('dashboard');
+  if (!token || isDashboardPage) {
+    return null;
+  }
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     navigate('/');
   };
-
-  if (!token) {
-    return null; // Don't show navigation if not logged in
-  }
 
   return (
     <nav>

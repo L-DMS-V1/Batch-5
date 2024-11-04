@@ -1,0 +1,8 @@
+nav {
+  display: none; /* Hide by default on dashboard pages */
+}
+
+/* Only show navigation when explicitly needed */
+.show-nav nav {
+  display: block;
+} 
