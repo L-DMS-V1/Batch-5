@@ -2,7 +2,6 @@ package com.LDMSAppBackend.BackendModule.entites;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.boot.model.source.spi.InheritanceType;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
