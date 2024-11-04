@@ -13,8 +13,8 @@ public class Manager{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int managerId;
 
-    @OneToOne
-    @JoinColumn(name="userName")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name="user_account_Id",referencedColumnName = "accountId")
     private User user;
 
     @OneToMany(mappedBy = "manager",fetch = FetchType.LAZY)

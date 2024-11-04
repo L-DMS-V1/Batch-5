@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     @GetMapping("/info")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAdminTest()
     {
         return ResponseEntity.ok("in admin");

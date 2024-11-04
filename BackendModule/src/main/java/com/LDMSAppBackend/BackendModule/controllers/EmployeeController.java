@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 public class EmployeeController {
 
     @GetMapping("/info")
-    @PreAuthorize("hasRole('EMPLOYEE')")
     public ResponseEntity<?> getEmployeeTest()
     {
         return ResponseEntity.ok("in employee");

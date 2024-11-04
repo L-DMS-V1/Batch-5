@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 public class ManagerController {
 
     @GetMapping("/info")
-    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<?> getManagerTest()
     {
         return ResponseEntity.ok("in manager");

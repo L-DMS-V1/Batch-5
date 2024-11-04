@@ -17,7 +17,7 @@ import java.util.function.Function;
 
 @Component
 public class JwtHelper {
-    private final String SECRET = "batch5infosysspringboard";
+    private final String SECRET = "batch5InfosysSpringboard";
     private final long EXPIRATION_TIME = 5*60*60*1000; // 5 hours
 
     @Autowired
