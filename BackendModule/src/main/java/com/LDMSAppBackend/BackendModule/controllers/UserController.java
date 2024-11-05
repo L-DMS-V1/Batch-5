@@ -50,7 +50,7 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
-        return ResponseEntity.ok("User  registered successfully");
+        return ResponseEntity.ok("User registered successfully");
     }
 
     @PostMapping("/login")

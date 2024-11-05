@@ -11,8 +11,8 @@ public @Data class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer employeeId;
 
-    @OneToOne
-    @JoinColumn(name="userName")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name="user_account_Id",referencedColumnName = "accountId")
     private User user;
 
     @Column(name="position")

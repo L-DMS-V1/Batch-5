@@ -29,7 +29,7 @@ const Register = () => {
       console.log('Registration successful', response.status);
       navigate('/login'); // Navigate to login after successful registration
     } catch (error) {
-      console.error('Registration failed', error.response?.status);
+      console.error('Registration failed', error.response?.data);
       setError('Registration failed. Please try again.');
     }
   };

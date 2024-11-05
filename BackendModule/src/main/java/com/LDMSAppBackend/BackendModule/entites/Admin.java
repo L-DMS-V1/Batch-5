@@ -13,7 +13,7 @@ public class Admin {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @OneToOne
-    @JoinColumn(referencedColumnName = "user_name")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name="user_account_Id",referencedColumnName = "accountId")
     private User user;
 }
