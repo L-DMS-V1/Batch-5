@@ -18,12 +18,15 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    @Autowired
-    @Qualifier("user-details-service")
     private UserDetailsService userDetailsService;
 
-    @Autowired
     private JwtHelper jwtTokenHelper;
+
+    @Autowired
+    public JwtAuthenticationFilter(@Qualifier("user-details-service") UserDetailsService userDetailsService, JwtHelper jwtTokenHelper) {
+        this.userDetailsService = userDetailsService;
+        this.jwtTokenHelper = jwtTokenHelper;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

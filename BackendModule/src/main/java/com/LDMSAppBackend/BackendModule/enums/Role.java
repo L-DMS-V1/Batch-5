@@ -1,4 +1,4 @@
-package com.LDMSAppBackend.BackendModule.entites;
+package com.LDMSAppBackend.BackendModule.enums;
 
 public enum Role {
     ADMIN,

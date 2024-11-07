@@ -4,11 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Data
 public class UserResponseDto {
-    private Integer accountId;
+    private Integer id;
     private String accountName;
     private String userName;
     private String email;

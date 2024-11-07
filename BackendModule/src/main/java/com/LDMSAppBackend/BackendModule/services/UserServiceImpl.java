@@ -1,5 +1,6 @@
 package com.LDMSAppBackend.BackendModule.services;
 
+import com.LDMSAppBackend.BackendModule.Dtos.UserRegistrationDto;
 import com.LDMSAppBackend.BackendModule.entites.Admin;
 import com.LDMSAppBackend.BackendModule.entites.Employee;
 import com.LDMSAppBackend.BackendModule.entites.Manager;
@@ -14,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserServiceImpl implements UserService{
-
     @Autowired
     private UserRepository userRepository;
 
@@ -34,12 +34,20 @@ public class UserServiceImpl implements UserService{
 
     @Override
     @Transactional
-    public User addUser(User user) throws Exception {
-        if(userRepository.existsByUserName(user.getUsername()))
+    public User addUser(UserRegistrationDto userRegistrationDto) throws Exception {
+        if(userRepository.existsByUserName(userRegistrationDto.getUserName()))
         {
             throw new Exception("User already exists");
         }
-        if(user.getRole().equalsIgnoreCase("admin"))
+
+        User user = new User();
+        user.setUserName(userRegistrationDto.getUserName());
+        user.setRole(userRegistrationDto.getRole().toUpperCase());
+        user.setPassword(userRegistrationDto.getPassword());
+        user.setAccountName(userRegistrationDto.getAccountName());
+        user.setEmail(userRegistrationDto.getEmail());
+
+        if(userRegistrationDto.getRole().equalsIgnoreCase("admin"))
         {
             Admin admin = new Admin();
             admin.setUser (user);
@@ -57,7 +65,7 @@ public class UserServiceImpl implements UserService{
             employee.setUser (user);
             employeeRepository.save(employee);
         }
-        return userRepository.save(user);
+        return user;
     }
 
     @Override

@@ -1,17 +1,17 @@
 package com.LDMSAppBackend.BackendModule.Dtos;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserLoginRequestDto {
-    @NonNull
+    @NotEmpty(message = "username cannot be empty")
     private String userName;
 
-    @NonNull
+    @NotEmpty(message = "username cannot be empty")
     private String password;
 }
