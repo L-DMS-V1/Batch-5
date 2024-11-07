@@ -3,8 +3,6 @@ package com.LDMSAppBackend.BackendModule.entites;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.util.Set;
-
 @Entity
 @Table(name="admin")
 @Data
