@@ -61,7 +61,7 @@ public class TrainingRequestService {
         return trainingRequestResponseList;
     }
 
-    public TrainingRequest requestForm(TrainingRequestDto trainingRequestDTO) throws RuntimeException{
+    public TrainingRequestResponse requestForm(TrainingRequestDto trainingRequestDTO) throws RuntimeException{
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Manager manager = managerRepository.getByUser_UserName(username);
 
@@ -74,21 +74,21 @@ public class TrainingRequestService {
         trainingRequest.setRequiredEmployees(trainingRequestDTO.getRequiredEmployees());
         trainingRequest.setStatus(Status.PENDING);
         trainingRequest.setManager(manager);
+        trainingRequest = trainingRepository.save(trainingRequest);
+        TrainingRequestResponse trainingRequestResponse = new TrainingRequestResponse(trainingRequest.getRequestId(),trainingRequest.getCourseName(),trainingRequest.getDescription(),trainingRequest.getConcepts(),trainingRequest.getDuration(),trainingRequest.getEmployeePosition(),trainingRequest.getRequiredEmployees(),trainingRequest.getManager().getManagerId());
 
-        return trainingRepository.save(trainingRequest);
+        return trainingRequestResponse;
     }
 
-    public List<TrainingRequestDto> getRequestsByManagerName(String requesterName) throws RuntimeException{
+    public List<TrainingRequestResponse> getRequestsByManagerName(String requesterName) throws RuntimeException{
         List<TrainingRequest> trainingRequests = trainingRepository.findByManager_User_UserName(requesterName);
-        List<TrainingRequestDto> trainingRequestDtos = new ArrayList<>();
+        List<TrainingRequestResponse> trainingRequestResponseList = new ArrayList<>();
         for(TrainingRequest trainingRequest:trainingRequests)
         {
-            TrainingRequestDto trainingRequestDto = new TrainingRequestDto(trainingRequest.getCourseName(),
-                    trainingRequest.getDescription(),trainingRequest.getConcepts(),trainingRequest.getDuration(),
-                    trainingRequest.getEmployeePosition(),trainingRequest.getRequiredEmployees());
-            trainingRequestDtos.add(trainingRequestDto);
+            TrainingRequestResponse trainingRequestResponse = new TrainingRequestResponse(trainingRequest.getRequestId(),trainingRequest.getCourseName(),trainingRequest.getDescription(),trainingRequest.getConcepts(),trainingRequest.getDuration(),trainingRequest.getEmployeePosition(),trainingRequest.getRequiredEmployees(),trainingRequest.getManager().getManagerId());
+            trainingRequestResponseList.add(trainingRequestResponse);
         }
-        return trainingRequestDtos;
+        return trainingRequestResponseList;
     }
 
     public TrainingRequestResponse getRequestByRequestId(Long requestId) throws IllegalArgumentException{
