@@ -26,26 +26,26 @@ public class ManagerController {
 
     @PostMapping("/createCourseRequest")
     public ResponseEntity<?> createRequest(@RequestBody TrainingRequestDto trainingRequestDTO) {
-        TrainingRequest trainingRequest;
+        TrainingRequestResponse trainingRequestResponse;
         try{
-            trainingRequest = trainingRequestService.requestForm(trainingRequestDTO);
+            trainingRequestResponse = trainingRequestService.requestForm(trainingRequestDTO);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-        return new ResponseEntity<>(trainingRequestDTO,HttpStatus.OK);
+        return new ResponseEntity<>(trainingRequestResponse,HttpStatus.OK);
     }
 
     @GetMapping("/getCourseRequests")
     public ResponseEntity<?> getRequests()
     {
-        List<TrainingRequestDto> trainingRequestDtos;
+        List<TrainingRequestResponse> trainingRequestResponseList;
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         try{
-                trainingRequestDtos = trainingRequestService.getRequestsByManagerName(username);
+                trainingRequestResponseList = trainingRequestService.getRequestsByManagerName(username);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
-        return ResponseEntity.ok(trainingRequestDtos);
+        return ResponseEntity.ok(trainingRequestResponseList);
     }
 
     @GetMapping("/getCourseRequest/{id}")
