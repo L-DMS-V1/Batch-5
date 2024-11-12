@@ -30,4 +30,7 @@ build/
 !**/src/test/**/build/
 
 ### VS Code ###
-.vscode/
+.vscode
+
+# Ignore ESLint cache files
+frontend/node_modules/.cache/

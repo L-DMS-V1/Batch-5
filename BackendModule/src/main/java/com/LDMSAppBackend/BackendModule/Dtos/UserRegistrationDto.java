@@ -1,31 +1,27 @@
 package com.LDMSAppBackend.BackendModule.Dtos;
 
-import jakarta.persistence.Id;
+
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 public  class UserRegistrationDto {
-    @Id
-    @NonNull
-    private Integer accountId;
-
-    @NonNull
+    @NotEmpty(message = "account name cannot be empty")
     private String accountName;
 
-    @NonNull
+    @NotEmpty(message = "user name cannot be empty")
     private String userName;
 
-    @NonNull
+    @NotEmpty(message = "password cannot be empty")
     private String password;
 
-    @NonNull
+    @NotEmpty(message = "email cannot be empty")
     private String email;
 
-    @NonNull
+    @NotEmpty(message = "role cannot be empty")
     private String role;
 }

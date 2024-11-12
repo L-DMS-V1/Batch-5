@@ -20,7 +20,7 @@ const Login = () => {
         userName: username,
         password
       });
-      const { token } = response.data; // Assuming the response contains the token
+      const { token,user} = response.data; // Assuming the response contains the token
       const decodedToken = jwtDecode(token); // Decode the token to get user role
       const userRole = decodedToken.role;
 

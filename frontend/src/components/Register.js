@@ -47,13 +47,6 @@ const Register = () => {
           required
         />
         <input
-          type="text" // Keep accountId as a text input for user entry
-          value={accountId}
-          onChange={(e) => setAccountId(e.target.value)} // Use accountId
-          placeholder="Account ID"
-          required
-        />
-        <input
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
