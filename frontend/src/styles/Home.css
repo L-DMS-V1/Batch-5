@@ -74,20 +74,39 @@ nav {
 .nav-link, .nav-button {
   color: #ffffff;
   text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 5px;
+  padding: 8px 16px;
+  border-radius: 4px;
   transition: all 0.3s ease;
-  font-weight: 600; /* Make text bolder */
+  font-weight: 500;
+  font-size: 14px;
+  border: none;
+  margin-left: 12px;
+  display: inline-block;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.nav-link {
+  background-color: #4CAF50;
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
 }
 
 .nav-button {
   background-color: #4CAF50;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Add subtle shadow to button */
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
+  padding: 8px 12px;
 }
 
 .nav-link:hover, .nav-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-3px);
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+.nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .main-content {
