@@ -5,31 +5,33 @@ import { ENDPOINTS } from '../config/api';
 import '../styles/Register.css';
 
 const Register = () => {
-  const [accountId, setAccountId] = useState(''); // Keep accountId as a string for user input
-  const [accountName, setAccountName] = useState(''); // Keep accountName as a string
+  const navigate = useNavigate();
+  const [accountId, setAccountId] = useState('');
+  const [accountName, setAccountName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('EMPLOYEE');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     try {
       const response = await axios.post(ENDPOINTS.REGISTER, {
-        accountId: parseInt(accountId, 10), // Convert accountId to an integer
+        accountId: parseInt(accountId, 10),
         accountName,
-        userName:username,
+        userName: username,
         password,
         email,
         role
       });
-      console.log('Registration successful', response.status);
-      navigate('/login'); // Navigate to login after successful registration
+
+      if (response.status === 200 || response.status === 201) {
+        alert('Registration successful! Please login.');
+        navigate('/login');  // Navigate to login page
+      }
     } catch (error) {
-      console.error('Registration failed', error.response?.data);
+      console.error('Registration failed', error);
       setError('Registration failed. Please try again.');
     }
   };
@@ -39,6 +41,13 @@ const Register = () => {
       <form onSubmit={handleSubmit} className="register-form">
         <h2>Create an Account</h2>
         {error && <p className="error-message">{error}</p>}
+        <input
+          type="text"
+          value={accountId}
+          onChange={(e) => setAccountId(e.target.value)}
+          placeholder="Account ID"
+          required
+        />
         <input
           type="text"
           value={accountName}

@@ -1,9 +1,10 @@
-export const API_BASE_URL = 'http://localhost:8080'; // Update to your local backend URL
+export const API_BASE_URL = 'http://localhost:8080';
 
 export const ENDPOINTS = {
-  LOGIN: `${API_BASE_URL}/api/user/login`,
-  REGISTER: `${API_BASE_URL}/api/user/register`,
-  EMPLOYEE_DASHBOARD: `${API_BASE_URL}/api/employee/info`,
-  ADMIN_DASHBOARD: `${API_BASE_URL}/api/admin/info`,
-  MANAGER_DASHBOARD: `${API_BASE_URL}/api/manager/info`, 
+  LOGIN: '/api/user/login',
+  REGISTER: '/api/user/register',
+  MANAGER_REQUEST: '/api/manager/createCourseRequest',
+  GET_MANAGER_REQUESTS: '/api/manager/getCourseRequests',
+  ADMIN_GET_REQUESTS: '/api/admin/getAllRequests',
+  ADMIN_UPDATE_REQUEST: '/api/admin/updateRequestStatus'
 };

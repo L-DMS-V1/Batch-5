@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 import { ENDPOINTS } from '../config/api';
 import '../styles/Login.css';
-import { jwtDecode } from 'jwt-decode';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -20,14 +20,13 @@ const Login = () => {
         userName: username,
         password
       });
-      const { token,user} = response.data; // Assuming the response contains the token
-      const decodedToken = jwtDecode(token); // Decode the token to get user role
+      const { token } = response.data;
+      const decodedToken = jwtDecode(token);
       const userRole = decodedToken.role;
 
       localStorage.setItem('token', token);
       localStorage.setItem('role', userRole);
       
-      // Navigate to the respective dashboard based on the role
       if (userRole === 'ADMIN') {
         navigate('/admin-dashboard');
       } else if (userRole === 'MANAGER') {
@@ -65,7 +64,7 @@ const Login = () => {
           Don't have an account?{' '}
           <span
             style={{ color: 'blue', cursor: 'pointer' }}
-            onClick={() => navigate('/register')} // Navigate to the registration page
+            onClick={() => navigate('/register')}
           >
             Register here
           </span>
