@@ -44,16 +44,17 @@ public class CourseService {
     }
 
     // Get course by ID
-    public Course getCourseByCourseId(Long id) {
+    public CourseCreationDto getCourseByCourseId(Long id) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
-        return course;
+        CourseCreationDto courseCreationDto = mapToCourseDto(course);
+        return courseCreationDto;
     }
 
     // Get all courses
-    public List<CourseCreationDto> getAllCourses() {
+    public List<CourseDisplayForAdmin> getAllCourses() {
         List<Course> courses = courseRepository.findAll();
-        return courses.stream().map(this::mapToCourseDto).collect(Collectors.toList());
+        return courses.stream().map(this::mapToCoursesForAdminDto).collect(Collectors.toList());
     }
 
     // Update an existing course
@@ -175,6 +176,10 @@ public class CourseService {
                 course.getDuration(),
                 mapToResourcesDto(course.getResources()),
                 course.getOutcomes()
+        );
+    }private CourseDisplayForAdmin mapToCoursesForAdminDto(Course course) {
+        return new CourseDisplayForAdmin(
+                course.getCourseId(),course.getCourseName(),course.getDuration()
         );
     }
 

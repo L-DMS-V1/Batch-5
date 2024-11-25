@@ -23,4 +23,6 @@ public class CourseAssignedToEmployee {
     private String deadLine;
 
     private List<ResourceLinksAndStatus> resourceLinksAndStatuses;
+
+    private Long assignmentId;
 }

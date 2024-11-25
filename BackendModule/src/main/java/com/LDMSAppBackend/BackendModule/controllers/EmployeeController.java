@@ -6,6 +6,7 @@ import com.LDMSAppBackend.BackendModule.Dtos.*;
 import com.LDMSAppBackend.BackendModule.services.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -47,7 +48,7 @@ public class EmployeeController {
         return ResponseEntity.ok(courses);
     }
     @GetMapping("/{employeeId}/getCourse/{courseId}")
-    public ResponseEntity<?> getCourse( @PathVariable("courseId") @Valid Long courseId, @PathVariable("employeeId") @Valid Integer employeeId)
+    public ResponseEntity<?> getCourse( @PathVariable("courseId") Long courseId, @PathVariable("employeeId") Integer employeeId)
     {
         CourseAssignedToEmployee course;
         try{
@@ -59,7 +60,7 @@ public class EmployeeController {
     }
 
     @PutMapping("/{employeeId}/{resourceId}/completed")
-    public ResponseEntity<?> markCompleted( @PathVariable("employeeId") Integer employeeId, @PathVariable("resourceId")  Long resourceId)
+    public ResponseEntity<?> markCompleted(@PathVariable("employeeId") Integer employeeId, @PathVariable("resourceId")  Long resourceId)
     {
         String message = "";
         try{
@@ -81,16 +82,19 @@ public class EmployeeController {
         return ResponseEntity.ok("marked as not completed");
     }
 
-    @PostMapping("/feedback/{courseId}")
-    public ResponseEntity<?> feedBack(@RequestBody @Valid FeedBackDto feedBackDto,@PathVariable("courseId") Long courseId, BindingResult bindingResult)
+    @PostMapping("/feedback/{courseId}/{assignmentId}")
+    public ResponseEntity<?> feedBack(@RequestBody @Valid FeedBackDto feedBackDto,@PathVariable("courseId") Long courseId,@PathVariable("assignmentId") Long assignmentId, BindingResult bindingResult)
     {
         if(bindingResult.hasErrors())
         {
             return ResponseEntity.badRequest().body(bindingResult.getFieldErrors());
         }
         try {
-            feedBackService.addFeedback(feedBackDto,courseId);
-        } catch (Exception e) {
+            feedBackService.addFeedback(feedBackDto,courseId,assignmentId);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+        catch (Exception e) {
             return ResponseEntity.internalServerError().body("error:"+e.getMessage());
         }
         return ResponseEntity.ok("feed back saved successfully");

@@ -39,6 +39,7 @@ public class CourseServiceForEmployee {
         courseAssignedToEmployee.setOutcomes(course.getOutcomes());
         courseAssignedToEmployee.setDeadLine(courseAssignment.getDeadline());
         courseAssignedToEmployee.setKeyConcepts(course.getKeyConcepts());
+        courseAssignedToEmployee.setAssignmentId(courseAssignment.getAssignmentId());
 
         //getting resources statuses by employees and resource id
         List<Resources> resourceLinks = course.getResources();

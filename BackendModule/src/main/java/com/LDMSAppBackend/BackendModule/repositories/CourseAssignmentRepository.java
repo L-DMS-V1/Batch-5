@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface CourseAssignmentRepository extends JpaRepository<CourseAssignment, Integer> {
+public interface CourseAssignmentRepository extends JpaRepository<CourseAssignment, Long> {
     List<CourseAssignment> findByEmployee_EmployeeId(Integer employeeId);
     Optional<CourseAssignment> findByCourse_CourseIdAndEmployee_EmployeeId(Long courseId, Integer employeeId);
     Boolean existsByEmployee_EmployeeIdAndCourse_CourseId(Integer employeeId, Long courseId);

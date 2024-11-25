@@ -26,15 +26,17 @@ public class AdminController {
     private final CourseProgressService courseProgressService;
     private final PasswordEncoder passwordEncoder;
     private final UserServiceImpl userService;
+    private final FeedBackService feedBackService;
 
 
     @Autowired
-    public AdminController(TrainingRequestService trainingRequestService, CourseService courseService, CourseProgressService courseProgressService, PasswordEncoder passwordEncoder, UserServiceImpl userService) {
+    public AdminController(TrainingRequestService trainingRequestService, CourseService courseService, CourseProgressService courseProgressService, PasswordEncoder passwordEncoder, UserServiceImpl userService, FeedBackService feedBackService) {
         this.trainingRequestService = trainingRequestService;
         this.courseService = courseService;
         this.courseProgressService = courseProgressService;
         this.passwordEncoder = passwordEncoder;
         this.userService = userService;
+        this.feedBackService = feedBackService;
     }
 
     @PostMapping("/addEmployee")
@@ -160,7 +162,7 @@ public class AdminController {
     @GetMapping("/getAllCoursers")
     public ResponseEntity<?> getAllCourses()
     {
-        List<CourseCreationDto> courses;
+        List<CourseDisplayForAdmin> courses;
         try{
             courses = courseService.getAllCourses();
         } catch (Exception e) {
@@ -169,6 +171,17 @@ public class AdminController {
         return ResponseEntity.ok(courses);
     }
 
+    @GetMapping("/getCourse/{courseId}")
+    public ResponseEntity<?> getCourse(@PathVariable("courseId") Long courseId)
+    {
+        CourseCreationDto course;
+        try {
+            course = courseService.getCourseByCourseId(courseId);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+        return ResponseEntity.ok(course);
+    }
     @GetMapping("/getProgresses")
     public ResponseEntity<?> getProgress()
     {
@@ -187,6 +200,18 @@ public class AdminController {
     public ResponseEntity<?> getEmployeeByPosition(@PathVariable("position") String position)
     {
         return ResponseEntity.ok(trainingRequestService.getEmployeesByPosition(position));
+    }
+
+    @GetMapping("/getFeedbacks/{courseId}")
+    public ResponseEntity<?> getFeedbacks(@PathVariable("courseId") Long courseId)
+    {
+        return ResponseEntity.ok(feedBackService.getFeedBacks(courseId));
+    }
+
+    @GetMapping("/getFeedbackFrequencies/{courseId}")
+    public ResponseEntity<?> getFeedbackFrequencies(@PathVariable("courseId") Long courseId)
+    {
+        return ResponseEntity.ok(feedBackService.getRatingFrequency(courseId));
     }
 }
 
