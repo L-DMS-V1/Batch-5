@@ -1,11 +1,10 @@
 package com.LDMSAppBackend.BackendModule.entites;
 
+import com.LDMSAppBackend.BackendModule.enums.CourseStatus;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
-
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -14,10 +13,10 @@ public class CourseAssignment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int assignmentId;
+    private Long assignmentId;
 
     @Column(nullable = false)
-    private String status;
+    private CourseStatus courseStatus;
 
     @Column(nullable = false)
     private String deadline;

@@ -1,10 +1,13 @@
 package com.LDMSAppBackend.BackendModule.services;
 
+import com.LDMSAppBackend.BackendModule.Dtos.EmployeeInfoForAdmin;
 import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestDto;
 import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestResponse;
+import com.LDMSAppBackend.BackendModule.entites.Employee;
 import com.LDMSAppBackend.BackendModule.entites.Manager;
 import com.LDMSAppBackend.BackendModule.entites.TrainingRequest;
 import com.LDMSAppBackend.BackendModule.enums.Status;
+import com.LDMSAppBackend.BackendModule.repositories.EmployeeRepository;
 import com.LDMSAppBackend.BackendModule.repositories.ManagerRepository;
 import com.LDMSAppBackend.BackendModule.repositories.TrainingRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,14 +20,17 @@ import java.util.List;
 
 @Service
 public class TrainingRequestService {
-    private TrainingRepository trainingRepository;
+    private final TrainingRepository trainingRepository;
 
-    private ManagerRepository managerRepository;
+    private final ManagerRepository managerRepository;
+
+    private final EmployeeRepository employeeRepository;
 
     @Autowired
-    public TrainingRequestService(TrainingRepository trainingRepository, ManagerRepository managerRepository) {
+    public TrainingRequestService(TrainingRepository trainingRepository, ManagerRepository managerRepository, EmployeeRepository employeeRepository) {
         this.trainingRepository = trainingRepository;
         this.managerRepository = managerRepository;
+        this.employeeRepository = employeeRepository;
     }
 
     public void acceptRequest(Long requestId) {
@@ -53,10 +59,7 @@ public class TrainingRequestService {
         List<TrainingRequestResponse> trainingRequestResponseList = new ArrayList<>();
         for(TrainingRequest trainingRequest:trainingRequests)
         {
-            TrainingRequestResponse trainingRequestDto = new TrainingRequestResponse(trainingRequest.getRequestId(),
-                    trainingRequest.getCourseName(),trainingRequest.getDescription(),trainingRequest.getConcepts(),
-                    trainingRequest.getDuration(),trainingRequest.getEmployeePosition(),trainingRequest.getRequiredEmployees(),trainingRequest.getManager().getManagerId());
-            trainingRequestResponseList.add(trainingRequestDto);
+            trainingRequestResponseList.add(mapTrainingToResponse(trainingRequest));
         }
         return trainingRequestResponseList;
     }
@@ -75,9 +78,8 @@ public class TrainingRequestService {
         trainingRequest.setStatus(Status.PENDING);
         trainingRequest.setManager(manager);
         trainingRequest = trainingRepository.save(trainingRequest);
-        TrainingRequestResponse trainingRequestResponse = new TrainingRequestResponse(trainingRequest.getRequestId(),trainingRequest.getCourseName(),trainingRequest.getDescription(),trainingRequest.getConcepts(),trainingRequest.getDuration(),trainingRequest.getEmployeePosition(),trainingRequest.getRequiredEmployees(),trainingRequest.getManager().getManagerId());
 
-        return trainingRequestResponse;
+        return mapTrainingToResponse(trainingRequest);
     }
 
     public List<TrainingRequestResponse> getRequestsByManagerName(String requesterName) throws RuntimeException{
@@ -85,8 +87,7 @@ public class TrainingRequestService {
         List<TrainingRequestResponse> trainingRequestResponseList = new ArrayList<>();
         for(TrainingRequest trainingRequest:trainingRequests)
         {
-            TrainingRequestResponse trainingRequestResponse = new TrainingRequestResponse(trainingRequest.getRequestId(),trainingRequest.getCourseName(),trainingRequest.getDescription(),trainingRequest.getConcepts(),trainingRequest.getDuration(),trainingRequest.getEmployeePosition(),trainingRequest.getRequiredEmployees(),trainingRequest.getManager().getManagerId());
-            trainingRequestResponseList.add(trainingRequestResponse);
+            trainingRequestResponseList.add(mapTrainingToResponse(trainingRequest));
         }
         return trainingRequestResponseList;
     }
@@ -97,7 +98,36 @@ public class TrainingRequestService {
         {
             throw new IllegalArgumentException();
         }
-        TrainingRequestResponse trainingRequestResponse = new TrainingRequestResponse(trainingRequest.getRequestId(),trainingRequest.getCourseName(),trainingRequest.getDescription(),trainingRequest.getConcepts(),trainingRequest.getDuration(),trainingRequest.getEmployeePosition(),trainingRequest.getRequiredEmployees(),trainingRequest.getManager().getManagerId());
-        return trainingRequestResponse;
+        return mapTrainingToResponse(trainingRequest);
+    }
+
+    public List<TrainingRequestResponse> getAllPendingRequests()
+    {
+        List<TrainingRequest> trainingRequests = trainingRepository.findByStatus(Status.PENDING);
+        List<TrainingRequestResponse> trainingRequestResponses = new ArrayList<>();
+        for(TrainingRequest trainingRequest : trainingRequests)
+        {
+            trainingRequestResponses.add(
+                    mapTrainingToResponse(trainingRequest)
+            );
+        }
+        return trainingRequestResponses;
+    }
+
+    public List<EmployeeInfoForAdmin> getEmployeesByPosition(String position)
+    {
+        List<Employee> employees = employeeRepository.findByPosition(position);
+        List<EmployeeInfoForAdmin> employeeInfoForAdminList = new ArrayList<>();
+        for(Employee employee:employees)
+        {
+            employeeInfoForAdminList.add(new EmployeeInfoForAdmin(employee.getEmployeeId(),employee.getUser().getUsername(),employee.getPosition()));
+        }
+        return employeeInfoForAdminList;
+    }
+
+    private TrainingRequestResponse mapTrainingToResponse(TrainingRequest trainingRequest)
+    {
+
+        return new TrainingRequestResponse(trainingRequest.getRequestId(),trainingRequest.getCourseName(),trainingRequest.getDescription(),trainingRequest.getConcepts(),trainingRequest.getDuration(),trainingRequest.getEmployeePosition(),trainingRequest.getRequiredEmployees(),trainingRequest.getManager().getUser().getUsername(),trainingRequest.getStatus());
     }
 }

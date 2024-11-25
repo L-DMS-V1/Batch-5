@@ -1,21 +1,24 @@
 package com.LDMSAppBackend.BackendModule.entites;
 
+import java.util.List;
+
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import jakarta.persistence.*;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Entity
+@Table(name = "courses")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Course {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int courseId;
+    private Long courseId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String courseName;
 
     @Column(nullable = false)
@@ -24,16 +27,15 @@ public class Course {
     @Column(nullable = false)
     private String duration;
 
-    @Column(nullable = false)
-    private String resourceLinks;
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Resources> resources;
 
-    @Column(nullable = false)
-    private String otherLinks;
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CourseAssignment> assignments;
 
     @Column(nullable = false)
     private String outcomes;
 
-    public Course(int courseId) {
-        this.courseId = courseId;
-    }
+    @OneToMany(cascade = CascadeType.ALL,mappedBy = "course")
+    private List<Feedback> feedback;
 }

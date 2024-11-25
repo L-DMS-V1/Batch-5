@@ -6,8 +6,7 @@ import java.util.List;
 
 @Data
 public class CourseAssignmentDto {
-    private Integer courseId;
-    private String status;
+    private Long courseId;
     private String deadline;
     private List<Integer> employeeIds;
 }
