@@ -1,6 +1,4 @@
 package com.LDMSAppBackend.BackendModule.repositories;
-
-import com.LDMSAppBackend.BackendModule.Dtos.LinkProgress;
 import com.LDMSAppBackend.BackendModule.entites.ResourceLinkCompletion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
