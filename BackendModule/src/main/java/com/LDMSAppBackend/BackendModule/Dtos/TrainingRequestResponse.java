@@ -1,5 +1,6 @@
 package com.LDMSAppBackend.BackendModule.Dtos;
 
+import com.LDMSAppBackend.BackendModule.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,5 +23,7 @@ public class TrainingRequestResponse {
 
     private Integer requiredEmployees;
 
-    private Integer managerId;
+    private String managerName;
+
+    private Status status;
 }

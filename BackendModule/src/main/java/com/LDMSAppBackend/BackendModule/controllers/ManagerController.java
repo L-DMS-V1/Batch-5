@@ -2,12 +2,15 @@ package com.LDMSAppBackend.BackendModule.controllers;
 
 import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestDto;
 import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestResponse;
-import com.LDMSAppBackend.BackendModule.entites.TrainingRequest;
 import com.LDMSAppBackend.BackendModule.services.TrainingRequestService;
+import com.LDMSAppBackend.BackendModule.services.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,15 +20,21 @@ import java.util.List;
 @RequestMapping("/api/manager")
 public class ManagerController {
 
-    TrainingRequestService trainingRequestService;
+    private final TrainingRequestService trainingRequestService;
+    private final UserService userService;
 
     @Autowired
-    public ManagerController(TrainingRequestService trainingRequestService) {
+    public ManagerController(TrainingRequestService trainingRequestService,@Qualifier("user-service-normal") UserService userService) {
         this.trainingRequestService = trainingRequestService;
+        this.userService = userService;
     }
 
     @PostMapping("/createCourseRequest")
-    public ResponseEntity<?> createRequest(@RequestBody TrainingRequestDto trainingRequestDTO) {
+    public ResponseEntity<?> createRequest(@RequestBody @Valid TrainingRequestDto trainingRequestDTO, BindingResult bindingResult) {
+        if(bindingResult.hasErrors())
+        {
+            return ResponseEntity.badRequest().body(bindingResult.getFieldErrors());
+        }
         TrainingRequestResponse trainingRequestResponse;
         try{
             trainingRequestResponse = trainingRequestService.requestForm(trainingRequestDTO);
@@ -59,5 +68,11 @@ public class ManagerController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No request found with id: "+requestId);
         }
         return ResponseEntity.ok(trainingRequestResponse);
+    }
+
+    @GetMapping("/getAllPositions")
+    public ResponseEntity<?> getPositions()
+    {
+        return ResponseEntity.ok(userService.getAllPositions());
     }
 }

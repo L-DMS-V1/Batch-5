@@ -2,10 +2,11 @@ package com.LDMSAppBackend.BackendModule.Dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
-public class CourseCreationResponseDto {
-    private CourseCreationDto courseCreationDto;
-    private String message;
+public class SetPasswordDto {
+    private String password;
 }

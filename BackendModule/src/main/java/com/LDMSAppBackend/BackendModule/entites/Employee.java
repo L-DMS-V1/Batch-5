@@ -1,5 +1,6 @@
 package com.LDMSAppBackend.BackendModule.entites;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -11,7 +12,8 @@ public @Data class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer employeeId;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @JsonBackReference
+    @OneToOne
     @JoinColumn(name="user_account_Id",referencedColumnName = "accountId")
     private User user;
 
@@ -20,4 +22,6 @@ public @Data class Employee {
 
     @Column(name="contact",length=10)
     private String contact;
+
+
 }

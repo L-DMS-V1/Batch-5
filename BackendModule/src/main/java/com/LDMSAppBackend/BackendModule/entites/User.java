@@ -1,5 +1,6 @@
 package com.LDMSAppBackend.BackendModule.entites;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -33,6 +34,18 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     private String role;
+
+    @JsonIgnore
+    @OneToOne(cascade = CascadeType.ALL,mappedBy = "user")
+    private Employee employee;
+
+    @JsonIgnore
+    @OneToOne(cascade = CascadeType.ALL,mappedBy = "user")
+    private Manager manager;
+
+    @JsonIgnore
+    @OneToOne(cascade = CascadeType.ALL,mappedBy = "user")
+    private Admin admin;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

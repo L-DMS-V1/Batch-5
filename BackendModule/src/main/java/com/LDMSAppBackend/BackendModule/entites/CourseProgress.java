@@ -11,26 +11,26 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @Entity
+@Table(name = "course_progress") // Changed to use underscore
 public class CourseProgress {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int progressId;
 
-    @Column(nullable = false)
-    private String lastAccessedDate = new Date().toString();
-
-    @Column(nullable = false)
-    private String status;
-
-    @ManyToOne
-    @JoinColumn(name = "assignmentId", referencedColumnName = "assignmentId", nullable = false)
     @JsonBackReference
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(referencedColumnName = "assignmentId")
     private CourseAssignment courseAssignment;
 
-    private int percentage;
-    public void setLastAccessedDate() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-        this.lastAccessedDate = formatter.format(new Date());
+    @Column(name = "percentage")
+    private Integer percentage = 0;
+
+    @Column(name = "last_updated_date")
+    private String lastUpdatedDate;
+
+    @PrePersist
+    protected void onCreate() {
+        lastUpdatedDate = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
     }
 }

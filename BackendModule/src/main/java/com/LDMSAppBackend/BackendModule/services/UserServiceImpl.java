@@ -1,5 +1,7 @@
 package com.LDMSAppBackend.BackendModule.services;
 
+import com.LDMSAppBackend.BackendModule.Dtos.EmployeeRegistrationDto;
+import com.LDMSAppBackend.BackendModule.Dtos.PositionsDto;
 import com.LDMSAppBackend.BackendModule.Dtos.UserRegistrationDto;
 import com.LDMSAppBackend.BackendModule.entites.Admin;
 import com.LDMSAppBackend.BackendModule.entites.Employee;
@@ -10,6 +12,8 @@ import com.LDMSAppBackend.BackendModule.repositories.EmployeeRepository;
 import com.LDMSAppBackend.BackendModule.repositories.ManagerRepository;
 import com.LDMSAppBackend.BackendModule.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +31,9 @@ public class UserServiceImpl implements UserService{
     @Autowired
     private ManagerRepository managerRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Override
     public User validateUser(String username) {
         return userRepository.findByUserName(username);
@@ -43,38 +50,66 @@ public class UserServiceImpl implements UserService{
         User user = new User();
         user.setUserName(userRegistrationDto.getUserName());
         user.setRole(userRegistrationDto.getRole().toUpperCase());
-        user.setPassword(userRegistrationDto.getPassword());
+        user.setPassword(passwordEncoder.encode(userRegistrationDto.getPassword()));
         user.setAccountName(userRegistrationDto.getAccountName());
         user.setEmail(userRegistrationDto.getEmail());
+        user = userRepository.save(user);
 
         if(userRegistrationDto.getRole().equalsIgnoreCase("admin"))
         {
             Admin admin = new Admin();
-            admin.setUser (user);
+            admin.setUser(user);
             adminRepository.save(admin);
         }
         else if(user.getRole().equalsIgnoreCase("manager"))
         {
             Manager manager = new Manager();
-            manager.setUser (user);
+            manager.setUser(user);
             managerRepository.save(manager);
-        }
-        else if(user.getRole().equalsIgnoreCase("employee"))
-        {
-            Employee employee = new Employee();
-            employee.setUser (user);
-            employeeRepository.save(employee);
         }
         return user;
     }
 
     @Override
-    public User removeUser(User user) {
-        return null;
+    public void removeUser(User user) {
+        userRepository.delete(user);
     }
 
     @Override
     public User updateUser(User user) {
         return null;
+    }
+
+    @Transactional
+    public void addEmployee(EmployeeRegistrationDto employeeRegistrationDto)
+    {
+        User user = new User();
+
+        // Set user properties based on the employee registration data
+        user.setAccountName(employeeRegistrationDto.getAccountName());
+        user.setUserName(employeeRegistrationDto.getUserName());
+        user.setPassword(employeeRegistrationDto.getPassword());
+        user.setEmail(employeeRegistrationDto.getEmail());
+        user.setRole(employeeRegistrationDto.getRole());
+        userRepository.save(user);
+        //creating employee
+        Employee employee = new Employee();
+        employee.setPosition(employeeRegistrationDto.getPosition());
+        employee.setContact(employeeRegistrationDto.getContact());
+        employee.setUser(user);
+        employeeRepository.save(employee);
+    }
+
+    @Override
+    public void setPassword(String password)
+    {
+        User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        user.setPassword(passwordEncoder.encode(password));
+        userRepository.save(user);
+    }
+
+    @Override
+    public PositionsDto getAllPositions() {
+        return new PositionsDto(employeeRepository.findDistinctPosition());
     }
 }
