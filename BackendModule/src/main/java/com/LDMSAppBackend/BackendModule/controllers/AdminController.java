@@ -13,7 +13,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @CrossOrigin(origins = "http://localhost:3000")
@@ -42,8 +44,13 @@ public class AdminController {
     @PostMapping("/addEmployee")
     public ResponseEntity<?> addEmployee(@RequestBody @Valid EmployeeRegistrationDto employeeRegistrationDto,BindingResult bindingResult)
     {
-        if(bindingResult.hasErrors()){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Fields: " + bindingResult.getFieldErrors());
+        // Handle validation errors
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error -> {
+                errors.put(error.getField(), error.getDefaultMessage());
+            });
+            return ResponseEntity.badRequest().body(errors);
         }
         Role role;
         try {
@@ -60,8 +67,8 @@ public class AdminController {
         return ResponseEntity.ok("Employee created successfully");
     }
 
-    @PutMapping("/acceptRequest/{id}")
-    public ResponseEntity<?> acceptRequest(@PathVariable("id") Long requestId) {
+    @PutMapping("/acceptRequest/{requestId}")
+    public ResponseEntity<?> acceptRequest(@PathVariable("requestId") Long requestId) {
         try{
         trainingRequestService.acceptRequest(requestId);
         }
@@ -72,8 +79,8 @@ public class AdminController {
         return ResponseEntity.ok("Request accepted");
     }
 
-    @PutMapping("/rejectRequest/{id}")
-    public ResponseEntity<String> rejectRequest(@PathVariable("id") Long requestId) {
+    @PutMapping("/rejectRequest/{requestId}")
+    public ResponseEntity<String> rejectRequest(@PathVariable("requestId") Long requestId) {
         try{
         trainingRequestService.rejectRequest(requestId);
         }
@@ -105,8 +112,13 @@ public class AdminController {
 
     @PostMapping("/course/assign")
     public ResponseEntity<?> assignCourse(@RequestBody @Valid CourseAssignmentDto courseAssignmentDto, BindingResult bindingResult){
-        if(bindingResult.hasErrors()){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Fields: " + bindingResult.getFieldErrors());
+        // Handle validation errors
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error -> {
+                errors.put(error.getField(), error.getDefaultMessage());
+            });
+            return ResponseEntity.badRequest().body(errors);
         }
         CourseAssignmentResponseDto courseAssignmentResponseDto;
         try {
@@ -133,8 +145,13 @@ public class AdminController {
     @PutMapping("/course/update/{courseId}")
     public ResponseEntity<?> updateCourse(@PathVariable("courseId") Long courseId,@RequestBody @Valid CourseCreationDto courseCreationDto, BindingResult bindingResult)
     {
-        if(bindingResult.hasErrors()){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Fields: " + bindingResult.getFieldErrors());
+        // Handle validation errors
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error -> {
+                errors.put(error.getField(), error.getDefaultMessage());
+            });
+            return ResponseEntity.badRequest().body(errors);
         }
         CourseCreationDto course = null;
         try{
