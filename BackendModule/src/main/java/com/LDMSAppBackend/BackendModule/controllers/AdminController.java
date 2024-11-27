@@ -17,8 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
@@ -176,7 +174,7 @@ public class AdminController {
         return ResponseEntity.ok(trainingRequestResponses);
     }
 
-    @GetMapping("/getAllCoursers")
+    @GetMapping("/getAllCourses")
     public ResponseEntity<?> getAllCourses()
     {
         List<CourseDisplayForAdmin> courses;

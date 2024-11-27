@@ -31,24 +31,25 @@ const AdminDashboard = () => {
   }, [navigate]);
 
   const fetchInitialData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const [requestsRes, coursesRes] = await Promise.all([
-        axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_REQUESTS, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_COURSES, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-      ]);
-      setRequests(requestsRes.data);
-      setCourses(coursesRes.data);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setMessage({ text: 'Error fetching data', type: 'error' });
-    } finally {
-      setLoading(false);
-    }
+      try {
+          const token = localStorage.getItem('token');
+          const [requestsRes, coursesRes] = await Promise.all([
+              axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_REQUESTS, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+              }),
+              axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_COURSES, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+              })
+          ]);
+          console.log('Requests:', requestsRes.data); // Log the requests data
+          setRequests(requestsRes.data);
+          setCourses(coursesRes.data);
+      } catch (error) {
+          console.error('Error fetching data:', error);
+          setMessage({ text: 'Error fetching data', type: 'error' });
+      } finally {
+          setLoading(false);
+      }
   };
 
   const handleAddEmployee = async (e) => {
