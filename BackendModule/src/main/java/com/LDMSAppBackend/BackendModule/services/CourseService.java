@@ -9,8 +9,8 @@ import com.LDMSAppBackend.BackendModule.repositories.EmployeeRepository;
 import com.LDMSAppBackend.BackendModule.repositories.ResourcesRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -157,14 +157,49 @@ public class CourseService {
     }
 
     // Get courses assigned to an employee
-    public List<CoursesDisplayForEmployee> getCoursesByEmployee(Integer employeeId) throws Exception {
-        List<CourseAssignment> courseAssignments = courseAssignmentRepository.findByEmployee_EmployeeId(employeeId);
+    public List<CoursesDisplayForEmployee> getCoursesByEmployee() throws Exception {
+    	String userName = SecurityContextHolder.getContext().getAuthentication().getName();
+    	Employee employee = employeeRepository.findByUser_UserName(userName);
+        List<CourseAssignment> courseAssignments = courseAssignmentRepository.findByEmployee(employee);
         List<CoursesDisplayForEmployee> coursesDisplayForEmployee = new ArrayList<>();
         for (CourseAssignment courseAssignment : courseAssignments) {
             Course course = courseAssignment.getCourse();
             coursesDisplayForEmployee.add(new CoursesDisplayForEmployee(course.getCourseId(),course.getCourseName(),course.getDuration(),courseAssignment.getDeadline()));
         }
         return coursesDisplayForEmployee;
+    }
+    
+    @Transactional
+    public CourseAssignedToEmployee getCourseForEmployee(Long courseId) throws NoSuchElementException {
+    	
+    	String userName = SecurityContextHolder.getContext().getAuthentication().getName();
+    	Employee employee = employeeRepository.findByUser_UserName(userName);
+    	
+        CourseAssignment courseAssignment = courseAssignmentRepository.findByCourse_CourseIdAndEmployee(courseId,employee).orElseThrow();
+        Course course = courseAssignment.getCourse();
+
+        //setting courses for employees
+        CourseAssignedToEmployee courseAssignedToEmployee = new CourseAssignedToEmployee();
+        courseAssignedToEmployee.setCourseId(course.getCourseId());
+        courseAssignedToEmployee.setCourseName(course.getCourseName());
+        courseAssignedToEmployee.setDuration(course.getDuration());
+        courseAssignedToEmployee.setOutcomes(course.getOutcomes());
+        courseAssignedToEmployee.setDeadLine(courseAssignment.getDeadline());
+        courseAssignedToEmployee.setKeyConcepts(course.getKeyConcepts());
+        courseAssignedToEmployee.setAssignmentId(courseAssignment.getAssignmentId());
+
+        //getting resources statuses by employees and resource id
+        List<Resources> resourceLinks = course.getResources();
+        List<ResourceLinksAndStatus> resourceLinksAndStatuses = new ArrayList<>();
+
+        for(Resources resourceLink:resourceLinks)
+        {
+            resourceLinksAndStatuses.add(resourceLinkCompletionService.getStatusesByResourceIdAndEmployeeId(employee.getEmployeeId(),resourceLink.getResourceId()));
+        }
+
+        courseAssignedToEmployee.setResourceLinksAndStatuses(resourceLinksAndStatuses);
+
+        return courseAssignedToEmployee;
     }
 
     // Helper method to map CourseDto to Course entity

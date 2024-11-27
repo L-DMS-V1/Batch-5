@@ -1,6 +1,8 @@
 package com.LDMSAppBackend.BackendModule.Dtos;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,6 +26,7 @@ public class TrainingRequestDto {
     @NotEmpty(message = "employeePosition cannot be empty")
     private String employeePosition;
 
-    @NotEmpty(message = "requiredEmployees cannot be empty")
+    @NotNull(message = "required employees cannot be empty")
+    @Min(1)
     private int requiredEmployees;
 }

@@ -125,6 +125,23 @@ public class TrainingRequestService {
         return employeeInfoForAdminList;
     }
 
+    public List<TrainingRequestResponse> getRequestsByManagerAndStatus(Status status)
+    {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Manager manager = managerRepository.findByUser_UserName(username);
+        if(manager == null)
+        {
+            throw new RuntimeException("we cannot retrieve your information please re login and be sure that you are a manager");
+        }
+        List<TrainingRequest> trainingRequests = trainingRepository.findByManagerAndStatus(manager,status);
+        List<TrainingRequestResponse> trainingRequestResponses = new ArrayList<>();
+        for(TrainingRequest trainingRequest:trainingRequests)
+        {
+            trainingRequestResponses.add(mapTrainingToResponse(trainingRequest));
+        }
+        return trainingRequestResponses;
+    }
+
     private TrainingRequestResponse mapTrainingToResponse(TrainingRequest trainingRequest)
     {
 

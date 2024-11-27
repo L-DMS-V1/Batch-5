@@ -1,13 +1,14 @@
 package com.LDMSAppBackend.BackendModule.Dtos;
 
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
 public class CourseAssignmentDto {
-    @NotEmpty(message = "course Id cannot be empty")
+    @NotNull(message = "course Id cannot be empty")
     private Long courseId;
 
     @NotEmpty(message = "deadline cannot be empty")
