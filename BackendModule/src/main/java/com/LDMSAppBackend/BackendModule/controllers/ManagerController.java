@@ -5,6 +5,8 @@ import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestResponse;
 import com.LDMSAppBackend.BackendModule.services.TrainingRequestService;
 import com.LDMSAppBackend.BackendModule.services.UserService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ public class ManagerController {
 
     private final TrainingRequestService trainingRequestService;
     private final UserService userService;
+    private static final Logger log = LoggerFactory.getLogger(ManagerController.class);
 
     @Autowired
     public ManagerController(TrainingRequestService trainingRequestService,@Qualifier("user-service-normal") UserService userService) {
@@ -71,8 +74,14 @@ public class ManagerController {
     }
 
     @GetMapping("/getAllPositions")
-    public ResponseEntity<?> getPositions()
-    {
-        return ResponseEntity.ok(userService.getAllPositions());
+    public ResponseEntity<?> getPositions() {
+        try {
+            var positions = userService.getAllPositions();
+            log.info("Fetched positions: {}", positions);
+            return ResponseEntity.ok(positions);
+        } catch (Exception e) {
+            log.error("Error fetching positions", e);
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 }

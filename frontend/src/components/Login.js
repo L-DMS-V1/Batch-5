@@ -1,75 +1,93 @@
 // src/components/Login.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { axiosInstance, ENDPOINTS } from '../config/api';
 import { jwtDecode } from 'jwt-decode';
-import { ENDPOINTS } from '../config/api';
-import '../styles/Login.css';
+import '../styles/Auth.css';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [credentials, setCredentials] = useState({
+    userName: '',
+    password: ''
+  });
+  const [message, setMessage] = useState({ text: '', type: '' });
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
     try {
-      const response = await axios.post(ENDPOINTS.LOGIN, {
-        userName: username,
-        password
-      });
-      const { token } = response.data;
-      const decodedToken = jwtDecode(token);
-      const userRole = decodedToken.role;
-
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', userRole);
+      const response = await axiosInstance.post(ENDPOINTS.LOGIN, credentials);
       
-      if (userRole === 'ADMIN') {
-        navigate('/admin-dashboard');
-      } else if (userRole === 'MANAGER') {
-        navigate('/manager-dashboard');
-      } else if (userRole === 'EMPLOYEE') {
-        navigate('/employee-dashboard');
+      if (response.data && response.data.token) {
+        const { token, user } = response.data;
+        
+        // Store complete user info
+        localStorage.setItem('token', token);
+        localStorage.setItem('role', user.role);
+        localStorage.setItem('userName', user.username);
+        localStorage.setItem('userId', user.id); // Store the manager/admin/employee ID
+        
+        // Set default auth header
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+        // Navigate based on role
+        const role = user.role.toLowerCase();
+        navigate(`/${role}`);
       }
     } catch (error) {
-      console.error('Login failed', error.response?.data);
-      setError('Login failed. Please check your credentials.');
+      console.error('Login error:', error);
+      setMessage({ 
+        text: error.response?.data?.message || 'Invalid credentials', 
+        type: 'error' 
+      });
     }
   };
 
   return (
-    <div className="login-container">
-      <form onSubmit={handleSubmit} className="login-form">
-        <h2>Welcome Back</h2>
-        {error && <p className="error-message">{error}</p>}
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
-          required
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          required
-        />
-        <button type="submit">Login</button>
-        <p>
-          Don't have an account?{' '}
-          <span
-            style={{ color: 'blue', cursor: 'pointer' }}
-            onClick={() => navigate('/register')}
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Login</h2>
+        <form onSubmit={handleLogin} className="auth-form">
+          <div className="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              value={credentials.userName}
+              onChange={(e) => setCredentials({
+                ...credentials,
+                userName: e.target.value.trim()
+              })}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              value={credentials.password}
+              onChange={(e) => setCredentials({
+                ...credentials,
+                password: e.target.value
+              })}
+              required
+            />
+          </div>
+          <button 
+            type="submit" 
+            className="auth-button"
           >
-            Register here
-          </span>
-        </p>
-      </form>
+            Login
+          </button>
+          <p className="auth-link">
+            Don't have an account? <span onClick={() => navigate('/register')}>Register</span>
+          </p>
+        </form>
+        {message.text && (
+          <div className={`message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

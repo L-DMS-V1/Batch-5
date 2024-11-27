@@ -2,87 +2,133 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ENDPOINTS } from '../config/api';
-import '../styles/Register.css';
+import '../styles/Auth.css';
 
 const Register = () => {
   const navigate = useNavigate();
-  const [accountId, setAccountId] = useState('');
-  const [accountName, setAccountName] = useState('');
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState('EMPLOYEE');
-  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    accountName: '',
+    userName: '',
+    password: '',
+    email: '',
+    role: 'MANAGER'
+  });
+  const [message, setMessage] = useState({ text: '', type: '' });
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-      const response = await axios.post(ENDPOINTS.REGISTER, {
-        accountId: parseInt(accountId, 10),
-        accountName,
-        userName: username,
-        password,
-        email,
-        role
+      console.log('Sending registration data:', formData);
+
+      const response = await axios.post(ENDPOINTS.REGISTER, formData);
+      console.log('Registration response:', response.data);
+
+      setMessage({ 
+        text: 'Registration successful! Redirecting to login...', 
+        type: 'success' 
       });
 
-      if (response.status === 200 || response.status === 201) {
-        alert('Registration successful! Please login.');
-        navigate('/login');  // Navigate to login page
-      }
+      // Store registration data for login
+      localStorage.setItem('registeredUserName', formData.userName);
+      
+      setTimeout(() => {
+        navigate('/login', { 
+          state: { userName: formData.userName }
+        });
+      }, 2000);
+
     } catch (error) {
-      console.error('Registration failed', error);
-      setError('Registration failed. Please try again.');
+      console.error('Registration error:', error.response?.data);
+      setMessage({ 
+        text: error.response?.data?.message || 'Registration failed', 
+        type: 'error' 
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="register-container">
-      <form onSubmit={handleSubmit} className="register-form">
-        <h2>Create an Account</h2>
-        {error && <p className="error-message">{error}</p>}
-        <input
-          type="text"
-          value={accountId}
-          onChange={(e) => setAccountId(e.target.value)}
-          placeholder="Account ID"
-          required
-        />
-        <input
-          type="text"
-          value={accountName}
-          onChange={(e) => setAccountName(e.target.value)} // Use accountName
-          placeholder="Account Name"
-          required
-        />
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
-          required
-        />
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          required
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          required
-        />
-        <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="EMPLOYEE">Employee</option>
-          <option value="MANAGER">Manager</option>
-          <option value="ADMIN">Admin</option>
-        </select>
-        <button type="submit">Register</button>
-      </form>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Register</h2>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label>Account Name</label>
+            <input
+              type="text"
+              value={formData.accountName}
+              onChange={(e) => setFormData({...formData, accountName: e.target.value.trim()})}
+              required
+              placeholder="Enter account name"
+              disabled={loading}
+            />
+          </div>
+          <div className="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              value={formData.userName}
+              onChange={(e) => setFormData({...formData, userName: e.target.value.trim()})}
+              required
+              placeholder="Enter username"
+              disabled={loading}
+            />
+          </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              required
+              placeholder="Enter password"
+              disabled={loading}
+            />
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value.trim()})}
+              required
+              placeholder="Enter email"
+              disabled={loading}
+            />
+          </div>
+          <div className="form-group">
+            <label>Role</label>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({...formData, role: e.target.value})}
+              required
+              disabled={loading}
+            >
+              <option value="MANAGER">Manager</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          </div>
+          <button 
+            type="submit" 
+            className="auth-button"
+            disabled={loading}
+          >
+            {loading ? 'Registering...' : 'Register'}
+          </button>
+          <p className="auth-link">
+            Already have an account? <span onClick={() => navigate('/login')}>Login</span>
+          </p>
+        </form>
+        {message.text && (
+          <div className={`message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

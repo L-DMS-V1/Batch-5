@@ -1,46 +1,45 @@
 import React from 'react';
-import './App.css';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './components/Home';
 import Login from './components/Login';
 import Register from './components/Register';
 import AdminDashboard from './components/AdminDashboard';
 import ManagerDashboard from './components/ManagerDashboard';
 import EmployeeDashboard from './components/EmployeeDashboard';
-import ProtectedRoute from './components/ProtectedRoute';
-import Navigation from './components/Navigation';
+import PrivateRoute from './components/PrivateRoute';
+import Unauthorized from './components/Unauthorized';
 
-const App = () => {
+function App() {
   return (
-    <div className="App">
-      <Router>
-        <Navigation />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route 
-            path="/admin-dashboard" 
-            element={
-              <ProtectedRoute roleRequired="ADMIN" element={<AdminDashboard />} />
-            } 
-          />
-          <Route 
-            path="/manager-dashboard" 
-            element={
-              <ProtectedRoute roleRequired="MANAGER" element={<ManagerDashboard />} />
-            } 
-          />
-          <Route 
-            path="/employee-dashboard" 
-            element={
-              <ProtectedRoute roleRequired="EMPLOYEE" element={<EmployeeDashboard />} />
-            } 
-          />
-        </Routes>
-      </Router>
-    </div>
+    <Router>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        
+        {/* Protected routes */}
+        <Route path="/admin/*" element={
+          <PrivateRoute allowedRoles={['ADMIN']}>
+            <AdminDashboard />
+          </PrivateRoute>
+        } />
+        
+        <Route path="/manager/*" element={
+          <PrivateRoute allowedRoles={['MANAGER']}>
+            <ManagerDashboard />
+          </PrivateRoute>
+        } />
+        
+        <Route path="/employee/*" element={
+          <PrivateRoute allowedRoles={['EMPLOYEE']}>
+            <EmployeeDashboard />
+          </PrivateRoute>
+        } />
+      </Routes>
+    </Router>
   );
-};
+}
 
 export default App;

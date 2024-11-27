@@ -1,116 +1,81 @@
 // src/components/AdminDashboard.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { ENDPOINTS } from '../config/api';
+import { axiosInstance, ENDPOINTS } from '../config/api';
 import '../styles/Dashboard.css';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [message, setMessage] = useState({ text: '', type: '' });
-  const [showCourseForm, setShowCourseForm] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [courseData, setCourseData] = useState({
-    courseName: '',           // From request
-    courseDescription: '',    // From request
-    courseDuration: '',       // From request
-    courseContent: '',        // Tutorial links
-    courseDocuments: '',      // Document links
-    courseAssignments: '',    // Assignments
-    employeeEmail: ''         // Email to assign course
+  const [loading, setLoading] = useState(true);
+  const [showAddEmployeeForm, setShowAddEmployeeForm] = useState(false);
+  const [employeeForm, setEmployeeForm] = useState({
+    accountName: '',
+    userName: '',
+    password: '',
+    email: '',
+    role: 'EMPLOYEE',
+    position: '',
+    contact: ''
   });
-  const [formMessage, setFormMessage] = useState({ text: '', type: '' });
 
   useEffect(() => {
-    fetchRequests();
-  }, []);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    fetchInitialData();
+  }, [navigate]);
 
-  const fetchRequests = async () => {
+  const fetchInitialData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(ENDPOINTS.ADMIN_GET_REQUESTS, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      setRequests(response.data);
+      const [requestsRes, coursesRes] = await Promise.all([
+        axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_REQUESTS, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_COURSES, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+      setRequests(requestsRes.data);
+      setCourses(coursesRes.data);
     } catch (error) {
-      console.error('Error fetching requests:', error);
+      console.error('Error fetching data:', error);
+      setMessage({ text: 'Error fetching data', type: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleStatusUpdate = async (requestId, newStatus) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(
-        ENDPOINTS.ADMIN_UPDATE_REQUEST,
-        { requestId, status: newStatus },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-      fetchRequests(); // Refresh list after update
-      setMessage({ text: 'Status updated successfully!', type: 'success' });
-    } catch (error) {
-      console.error('Error updating status:', error);
-      setMessage({ text: 'Failed to update status', type: 'error' });
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/');
-  };
-
-  const handleApprove = (request) => {
-    setSelectedRequest(request);
-    setCourseData({
-      ...courseData,
-      courseName: request.courseName,
-      courseDescription: request.description,
-      courseDuration: request.duration
-    });
-    setShowCourseForm(true);
-  };
-
-  const handleCourseSubmit = async (e) => {
+  const handleAddEmployee = async (e) => {
     e.preventDefault();
-    setFormMessage({ text: '', type: '' });
-    
     try {
       const token = localStorage.getItem('token');
-  
-      
-      const endpoint = ENDPOINTS.ADMIN_CREATE_COURSE(selectedRequest.id);
-  
-      const response = await axios.post(
-        endpoint,
+      await axiosInstance.post(
+        ENDPOINTS.ADMIN_ADD_EMPLOYEE,
+        employeeForm,
         {
-          ...courseData,
-          requestId: selectedRequest.id
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         }
       );
-
-      if (response.status === 200) {
-        setFormMessage({ text: 'Course created successfully!', type: 'success' });
-        setTimeout(() => {
-          setShowCourseForm(false);
-          fetchRequests();
-        }, 2000);
-      }
+      setMessage({ text: 'Employee added successfully', type: 'success' });
+      setShowAddEmployeeForm(false);
+      setEmployeeForm({
+        accountName: '',
+        userName: '',
+        password: '',
+        email: '',
+        role: 'EMPLOYEE',
+        position: '',
+        contact: ''
+      });
     } catch (error) {
-      console.error('Error creating course:', error);
-      setFormMessage({ text: 'Failed to create course. Please try again.', type: 'error' });
+      console.error('Error adding employee:', error);
+      setMessage({ text: error.response?.data?.message || 'Error adding employee', type: 'error' });
     }
   };
 
@@ -125,7 +90,14 @@ const AdminDashboard = () => {
           <button className="nav-button" title="Notifications">
             <i className="fas fa-bell"></i>
           </button>
-          <button className="nav-button" onClick={handleLogout} title="Logout">
+          <button 
+            className="nav-button" 
+            onClick={() => {
+              localStorage.clear();
+              navigate('/');
+            }} 
+            title="Logout"
+          >
             <i className="fas fa-sign-out-alt"></i>
           </button>
         </div>
@@ -138,25 +110,106 @@ const AdminDashboard = () => {
 
         <div className="stats-container">
           <div className="stat-card">
-            <i className="fas fa-list-alt stat-icon"></i>
+            <i className="fas fa-users stat-icon"></i>
             <h3>Total Requests</h3>
             <p className="stat-number">{requests.length}</p>
           </div>
           <div className="stat-card">
-            <i className="fas fa-check-circle stat-icon"></i>
-            <h3>Completed</h3>
-            <p className="stat-number">
-              {requests.filter(req => req.status === 'COMPLETED').length}
-            </p>
+            <i className="fas fa-book stat-icon"></i>
+            <h3>Total Courses</h3>
+            <p className="stat-number">{courses.length}</p>
           </div>
           <div className="stat-card">
             <i className="fas fa-clock stat-icon"></i>
-            <h3>Pending</h3>
+            <h3>Pending Requests</h3>
             <p className="stat-number">
-              {requests.filter(req => req.status === 'PENDING').length}
+              {requests.filter(r => r.status === 'PENDING').length}
             </p>
           </div>
         </div>
+
+        <div className="action-buttons">
+          <button 
+            className="create-button"
+            onClick={() => setShowAddEmployeeForm(true)}
+          >
+            <i className="fas fa-user-plus"></i> Add Employee
+          </button>
+        </div>
+
+        {showAddEmployeeForm && (
+          <div className="modal">
+            <div className="modal-content">
+              <h2>Add New Employee</h2>
+              <form onSubmit={handleAddEmployee} className="form">
+                <div className="form-group">
+                  <input
+                    type="text"
+                    placeholder="Account Name"
+                    value={employeeForm.accountName}
+                    onChange={(e) => setEmployeeForm({...employeeForm, accountName: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="text"
+                    placeholder="Username"
+                    value={employeeForm.userName}
+                    onChange={(e) => setEmployeeForm({...employeeForm, userName: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    value={employeeForm.password}
+                    onChange={(e) => setEmployeeForm({...employeeForm, password: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={employeeForm.email}
+                    onChange={(e) => setEmployeeForm({...employeeForm, email: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="text"
+                    placeholder="Position"
+                    value={employeeForm.position}
+                    onChange={(e) => setEmployeeForm({...employeeForm, position: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <input
+                    type="text"
+                    placeholder="Contact"
+                    value={employeeForm.contact}
+                    onChange={(e) => setEmployeeForm({...employeeForm, contact: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-buttons">
+                  <button type="submit" className="submit-button">Add Employee</button>
+                  <button 
+                    type="button" 
+                    className="cancel-button"
+                    onClick={() => setShowAddEmployeeForm(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         <div className="requests-list-container">
           <h2>Training Requests</h2>
@@ -176,17 +229,17 @@ const AdminDashboard = () => {
                     <td>{request.courseName}</td>
                     <td>{request.description}</td>
                     <td>
-                      <span className={`status-badge ${request.status?.toLowerCase() || 'pending'}`}>
-                        {request.status || 'PENDING'}
+                      <span className={`status-badge ${request.status.toLowerCase()}`}>
+                        {request.status}
                       </span>
                     </td>
                     <td>
-                      <button 
-                        className="approve-button"
-                        onClick={() => handleApprove(request)}
-                      >
-                        Create Course
-                      </button>
+                      {request.status === 'PENDING' && (
+                        <div className="action-buttons">
+                          <button className="accept-button">Accept</button>
+                          <button className="reject-button">Reject</button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -198,108 +251,6 @@ const AdminDashboard = () => {
         {message.text && (
           <div className={`message ${message.type}`}>
             {message.text}
-          </div>
-        )}
-
-        {/* Course Creation Form */}
-        {showCourseForm && (
-          <div className="modal">
-            <div className="modal-content">
-              <h2>Create Course Content</h2>
-              <form onSubmit={handleCourseSubmit} className="course-form">
-                <div className="form-group">
-                  <label>Course Name</label>
-                  <input 
-                    type="text"
-                    value={courseData.courseName}
-                    readOnly
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Description</label>
-                  <textarea 
-                    value={courseData.courseDescription}
-                    readOnly
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Duration</label>
-                  <input 
-                    type="text"
-                    value={courseData.courseDuration}
-                    readOnly
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Tutorial Links</label>
-                  <textarea 
-                    placeholder="Add video/tutorial links (one per line)"
-                    value={courseData.courseContent}
-                    onChange={(e) => setCourseData({
-                      ...courseData,
-                      courseContent: e.target.value
-                    })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Document Links</label>
-                  <textarea 
-                    placeholder="Add document links (one per line)"
-                    value={courseData.courseDocuments}
-                    onChange={(e) => setCourseData({
-                      ...courseData,
-                      courseDocuments: e.target.value
-                    })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Practice Assignments</label>
-                  <textarea 
-                    placeholder="Add practice assignments"
-                    value={courseData.courseAssignments}
-                    onChange={(e) => setCourseData({
-                      ...courseData,
-                      courseAssignments: e.target.value
-                    })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Assign to Employee (Email)</label>
-                  <input 
-                    type="email"
-                    value={courseData.employeeEmail}
-                    onChange={(e) => setCourseData({...courseData, employeeEmail: e.target.value})}
-                    required
-                  />
-                </div>
-
-                {formMessage.text && (
-                  <div className={`form-message ${formMessage.type}`}>
-                    {formMessage.text}
-                  </div>
-                )}
-
-                <div className="form-buttons">
-                  <button type="submit" className="submit-button">Create Course</button>
-                  <button 
-                    type="button" 
-                    className="cancel-button"
-                    onClick={() => setShowCourseForm(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
           </div>
         )}
       </div>
