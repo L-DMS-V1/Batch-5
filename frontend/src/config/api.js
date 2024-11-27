@@ -36,13 +36,13 @@ export const ENDPOINTS = {
   LOGIN: '/api/user/login',
   REGISTER: '/api/user/register',
 
-  // Manager endpoints (as per documentation)
+  // Manager endpoints 
   MANAGER_CREATE_REQUEST: '/api/manager/createCourseRequest',
   MANAGER_GET_REQUESTS: '/api/manager/getCourseRequests',
   MANAGER_GET_REQUEST_BY_ID: (id) => `/api/manager/getCourseRequest/${id}`,
   MANAGER_GET_POSITIONS: '/api/manager/getAllPositions',
 
-  // Admin endpoints (as per documentation)
+  // Admin endpoints 
   ADMIN_ADD_EMPLOYEE: '/api/admin/addEmployee',
   ADMIN_ACCEPT_REQUEST: (id) => `/api/admin/acceptRequest/${id}`,
   ADMIN_REJECT_REQUEST: (id) => `/api/admin/rejectRequest/${id}`,
