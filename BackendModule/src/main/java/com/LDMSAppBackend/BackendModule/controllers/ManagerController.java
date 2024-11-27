@@ -2,6 +2,7 @@ package com.LDMSAppBackend.BackendModule.controllers;
 
 import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestDto;
 import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestResponse;
+import com.LDMSAppBackend.BackendModule.enums.Status;
 import com.LDMSAppBackend.BackendModule.services.TrainingRequestService;
 import com.LDMSAppBackend.BackendModule.services.UserService;
 import jakarta.validation.Valid;
@@ -15,7 +16,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
@@ -34,9 +37,13 @@ public class ManagerController {
 
     @PostMapping("/createCourseRequest")
     public ResponseEntity<?> createRequest(@RequestBody @Valid TrainingRequestDto trainingRequestDTO, BindingResult bindingResult) {
-        if(bindingResult.hasErrors())
-        {
-            return ResponseEntity.badRequest().body(bindingResult.getFieldErrors());
+        // Handle validation errors
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error -> {
+                errors.put(error.getField(), error.getDefaultMessage());
+            });
+            return ResponseEntity.badRequest().body(errors);
         }
         TrainingRequestResponse trainingRequestResponse;
         try{
@@ -60,8 +67,8 @@ public class ManagerController {
         return ResponseEntity.ok(trainingRequestResponseList);
     }
 
-    @GetMapping("/getCourseRequest/{id}")
-    public ResponseEntity<?> getRequest(@PathVariable("id") Long requestId) {
+    @GetMapping("/getCourseRequest/{requestId}")
+    public ResponseEntity<?> getRequest(@PathVariable("requestId") Long requestId) {
         TrainingRequestResponse trainingRequestResponse;
         try{
         trainingRequestResponse = trainingRequestService.getRequestByRequestId(requestId);
@@ -83,5 +90,26 @@ public class ManagerController {
             log.error("Error fetching positions", e);
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/requests/{status}")
+    public ResponseEntity<?> getPendingRequests(@PathVariable("status") String status)
+    {
+        List<TrainingRequestResponse> trainingRequestResponses;
+        Status reqStatus;
+        try{
+            reqStatus = Status.valueOf(status.toUpperCase().trim());
+            trainingRequestResponses = trainingRequestService.getRequestsByManagerAndStatus(reqStatus);
+        }
+        catch(IllegalArgumentException e)
+        {
+            return ResponseEntity.badRequest().body("please check the manager Id ");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+        catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+        return ResponseEntity.ok(trainingRequestResponses);
     }
 }

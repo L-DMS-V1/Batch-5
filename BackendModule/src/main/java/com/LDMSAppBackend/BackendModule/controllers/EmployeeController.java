@@ -1,7 +1,5 @@
 package com.LDMSAppBackend.BackendModule.controllers;
 
-
-
 import com.LDMSAppBackend.BackendModule.Dtos.*;
 import com.LDMSAppBackend.BackendModule.services.*;
 import jakarta.validation.Valid;
@@ -11,7 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
@@ -20,26 +20,23 @@ public class EmployeeController {
 
     private final CourseService courseService;
 
-    private final CourseServiceForEmployee courseServiceForEmployee;
-
     private final ResourceLinkCompletionService resourceLinkCompletionService;
 
     private final FeedBackService feedBackService;
 
     @Autowired
-    public EmployeeController(CourseService courseService, CourseServiceForEmployee courseServiceForEmployee, ResourceLinkCompletionService resourceLinkCompletionService, FeedBackService feedBackService) {
+    public EmployeeController(CourseService courseService, ResourceLinkCompletionService resourceLinkCompletionService, FeedBackService feedBackService) {
         this.courseService = courseService;
-        this.courseServiceForEmployee = courseServiceForEmployee;
         this.resourceLinkCompletionService = resourceLinkCompletionService;
         this.feedBackService = feedBackService;
     }
 
-    @GetMapping("/{employeeId}/getCourses")
-    public ResponseEntity<?> getCourses(@PathVariable Integer employeeId)
+    @GetMapping("/getCourses")
+    public ResponseEntity<?> getCourses()
     {
         List<CoursesDisplayForEmployee> courses = null;
         try{
-            courses = courseService.getCoursesByEmployee(employeeId);
+            courses = courseService.getCoursesByEmployee();
         }
         catch (Exception e)
         {
@@ -47,35 +44,36 @@ public class EmployeeController {
         }
         return ResponseEntity.ok(courses);
     }
-    @GetMapping("/{employeeId}/getCourse/{courseId}")
-    public ResponseEntity<?> getCourse( @PathVariable("courseId") Long courseId, @PathVariable("employeeId") Integer employeeId)
+    @GetMapping("/getCourse/{courseId}")
+    public ResponseEntity<?> getCourse( @PathVariable("courseId") Long courseId)
     {
         CourseAssignedToEmployee course;
         try{
-            course= courseServiceForEmployee.getCourseForEmployee(employeeId,courseId);
-        } catch (Exception e) {
+            course= courseService.getCourseForEmployee(courseId);
+        }
+        catch (Exception e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
         return ResponseEntity.ok(course);
     }
 
-    @PutMapping("/{employeeId}/{resourceId}/completed")
-    public ResponseEntity<?> markCompleted(@PathVariable("employeeId") Integer employeeId, @PathVariable("resourceId")  Long resourceId)
+    @PutMapping("/{resourceId}/completed")
+    public ResponseEntity<?> markCompleted( @PathVariable("resourceId")  Long resourceId)
     {
         String message = "";
         try{
-           message= resourceLinkCompletionService.markResourceAsCompleted(employeeId,resourceId);
+           message= resourceLinkCompletionService.markResourceAsCompleted(resourceId);
         } catch (RuntimeException e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
         return ResponseEntity.ok(message);
     }
 
-    @PutMapping("/{employeeId}/{resourceId}/notCompleted")
-    public ResponseEntity<?> markNotCompleted(@PathVariable("employeeId")  Integer employeeId,@PathVariable("resourceId") Long resourceId)
+    @PutMapping("/{resourceId}/notCompleted")
+    public ResponseEntity<?> markNotCompleted(@PathVariable("resourceId") Long resourceId)
     {
         try{
-            resourceLinkCompletionService.markResourceAsNotCompleted(employeeId,resourceId);
+            resourceLinkCompletionService.markResourceAsNotCompleted(resourceId);
         } catch (RuntimeException e) {
             return ResponseEntity.internalServerError().body(e.getMessage()+"\n Cause: "+e.getCause());
         }
@@ -85,9 +83,13 @@ public class EmployeeController {
     @PostMapping("/feedback/{courseId}/{assignmentId}")
     public ResponseEntity<?> feedBack(@RequestBody @Valid FeedBackDto feedBackDto,@PathVariable("courseId") Long courseId,@PathVariable("assignmentId") Long assignmentId, BindingResult bindingResult)
     {
-        if(bindingResult.hasErrors())
-        {
-            return ResponseEntity.badRequest().body(bindingResult.getFieldErrors());
+        // Handle validation errors
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error -> {
+                errors.put(error.getField(), error.getDefaultMessage());
+            });
+            return ResponseEntity.badRequest().body(errors);
         }
         try {
             feedBackService.addFeedback(feedBackDto,courseId,assignmentId);
