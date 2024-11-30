@@ -1,39 +1,47 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { ENDPOINTS } from '../config/api';
+import '../styles/CourseResources.css';
 
-const CourseFeedback = ({ courseId, assignmentId, onSubmit }) => {
+const CourseFeedback = ({ onSubmit }) => {
   const [feedback, setFeedback] = useState({
     rating: '',
-    comment: ''
+    comment: ''  // Changed from comments to comment to match backend DTO
   });
-  const [message, setMessage] = useState({ text: '', type: '' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        ENDPOINTS.EMPLOYEE_SUBMIT_FEEDBACK(courseId, assignmentId),
-        feedback,
-        { headers: { 'Authorization': `Bearer ${token}` }}
-      );
-      setMessage({ text: 'Feedback submitted successfully', type: 'success' });
-      if (onSubmit) onSubmit();
-    } catch (error) {
-      setMessage({ text: 'Error submitting feedback', type: 'error' });
+    
+    // Validate rating is between 1-5
+    const rating = parseInt(feedback.rating);
+    if (isNaN(rating) || rating < 1 || rating > 5) {
+      alert('Please select a rating between 1 and 5');
+      return;
+    }
+
+    // Validate comment is not empty
+    if (!feedback.comment.trim()) {
+      alert('Please provide feedback comments');
+      return;
+    }
+
+    const feedbackData = {
+      rating: rating,
+      comment: feedback.comment.trim()  // Using comment to match backend DTO
+    };
+    
+    if (onSubmit) {
+      onSubmit(feedbackData);
     }
   };
 
   return (
-    <div className="feedback-container">
-      <h3>Submit Course Feedback</h3>
-      <form onSubmit={handleSubmit} className="feedback-form">
+    <div className="feedback-form">
+      <h3>Course Feedback</h3>
+      <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Rating (1-5)</label>
           <select
             value={feedback.rating}
-            onChange={(e) => setFeedback({...feedback, rating: parseInt(e.target.value)})}
+            onChange={(e) => setFeedback({...feedback, rating: e.target.value})}
             required
           >
             <option value="">Select Rating</option>
@@ -45,21 +53,18 @@ const CourseFeedback = ({ courseId, assignmentId, onSubmit }) => {
         <div className="form-group">
           <label>Comments</label>
           <textarea
-            value={feedback.comment}
-            onChange={(e) => setFeedback({...feedback, comment: e.target.value})}
+            value={feedback.comment}  // Changed from comments to comment
+            onChange={(e) => setFeedback({...feedback, comment: e.target.value})}  // Changed from comments to comment
             required
             placeholder="Please share your feedback about the course..."
           />
         </div>
-        <button type="submit">Submit Feedback</button>
+        <button type="submit" className="submit-button">
+          Submit Feedback
+        </button>
       </form>
-      {message.text && (
-        <div className={`message ${message.type}`}>
-          {message.text}
-        </div>
-      )}
     </div>
   );
 };
 
-export default CourseFeedback; 
+export default CourseFeedback;

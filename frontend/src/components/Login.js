@@ -17,18 +17,22 @@ const Login = () => {
     e.preventDefault();
     try {
       const response = await axiosInstance.post(ENDPOINTS.LOGIN, credentials);
+      console.log('Full Login Response:', response.data);
       
       if (response.data && response.data.token) {
         const { token, user } = response.data;
+        console.log('JWT Token:', token);
+        console.log('Decoded Token:', jwtDecode(token));
         
-        // Store complete user info
-        localStorage.setItem('token', token);
+        // Store token with Bearer prefix
+        const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+        localStorage.setItem('token', authToken);
         localStorage.setItem('role', user.role);
         localStorage.setItem('userName', user.username);
-        localStorage.setItem('userId', user.id); // Store the manager/admin/employee ID
+        localStorage.setItem('userId', user.id);
         
         // Set default auth header
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        axiosInstance.defaults.headers.common['Authorization'] = authToken;
 
         // Navigate based on role
         const role = user.role.toLowerCase();
@@ -45,8 +49,13 @@ const Login = () => {
 
   return (
     <div className="auth-container">
+      <button className="back-button" onClick={() => navigate('/')}>
+        <i className="fas fa-arrow-left"></i>
+      </button>
       <div className="auth-card">
-        <h2>Login</h2>
+        <div className="auth-header">
+          <h2>Login</h2>
+        </div>
         <form onSubmit={handleLogin} className="auth-form">
           <div className="form-group">
             <label>Username</label>

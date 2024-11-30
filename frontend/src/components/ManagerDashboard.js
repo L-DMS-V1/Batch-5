@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { axiosInstance, ENDPOINTS, handleApiError } from '../config/api';
 import '../styles/Dashboard.css';
+import ChangePasswordModal from './ChangePasswordModal';
 
 const ManagerDashboard = () => {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ const ManagerDashboard = () => {
     employeePosition: '',
     requiredEmployees: 0
   });
+  const [isReRequest, setIsReRequest] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -47,10 +50,7 @@ const ManagerDashboard = () => {
 
   const fetchRequests = async () => {
     try {
-      const managerId = localStorage.getItem('userId');
-      const response = await axiosInstance.get(
-        `${ENDPOINTS.MANAGER_GET_REQUESTS}?managerId=${managerId}`
-      );
+      const response = await axiosInstance.get(ENDPOINTS.MANAGER_GET_REQUESTS);
       setRequests(response.data);
     } catch (error) {
       console.error('Error fetching requests:', error);
@@ -70,7 +70,8 @@ const ManagerDashboard = () => {
         duration: formData.duration,
         employeePosition: formData.employeePosition,
         requiredEmployees: parseInt(formData.requiredEmployees),
-        status: 'PENDING'
+        status: 'PENDING',
+        isReRequest: isReRequest
       };
 
       console.log('Submitting request:', requestPayload);
@@ -91,6 +92,7 @@ const ManagerDashboard = () => {
         employeePosition: '',
         requiredEmployees: 0
       });
+      setIsReRequest(false);
       fetchRequests();
     } catch (error) {
       console.error('Submit error:', error);
@@ -99,6 +101,32 @@ const ManagerDashboard = () => {
         type: 'error' 
       });
     }
+  };
+
+  const handleReRequest = async (request) => {
+    try {
+      // Send request with same ID but updated status
+      const response = await axiosInstance.post(
+        ENDPOINTS.MANAGER_CREATE_REQUEST,
+        {
+          ...request,
+          id: request.id,
+          status: 'PENDING',
+          createdAt: new Date().toISOString() // Add current timestamp
+        }
+      );
+      
+      setMessage({ text: 'Course re-requested successfully', type: 'success' });
+      fetchRequests();
+    } catch (error) {
+      console.error('Error re-requesting course:', error);
+      setMessage({ text: handleApiError(error, setMessage), type: 'error' });
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
   };
 
   // Calculate stats for dashboard
@@ -122,28 +150,17 @@ const ManagerDashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <nav className="dashboard-nav">
-        <div className="nav-brand">LearningHub</div>
-        <div className="nav-links">
-          <button className="nav-button" title="Profile">
-            <i className="fas fa-user"></i>
+      <div className="dashboard-header">
+        <h1>Manager Dashboard</h1>
+        <div className="button-group">
+          <button className="action-button" onClick={() => setShowPasswordModal(true)}>
+            <i className="fas fa-key"></i> Change Password
           </button>
-          <button className="nav-button" title="Notifications">
-            <i className="fas fa-bell"></i>
-          </button>
-          <button 
-            className="nav-button" 
-            onClick={() => {
-              localStorage.clear();
-              navigate('/login');
-            }} 
-            title="Logout"
-          >
-            <i className="fas fa-sign-out-alt"></i>
+          <button className="logout-button" onClick={handleLogout}>
+            <i className="fas fa-sign-out-alt"></i> Logout
           </button>
         </div>
-      </nav>
-
+      </div>
       <div className="dashboard-main">
         <div className="welcome-section">
           <h1>Welcome back, <span className="user-name">Manager</span>! 👋</h1>
@@ -273,6 +290,12 @@ const ManagerDashboard = () => {
           </div>
         )}
       </div>
+      {showPasswordModal && (
+        <ChangePasswordModal
+          isOpen={showPasswordModal}
+          onClose={() => setShowPasswordModal(false)}
+        />
+      )}
     </div>
   );
 };

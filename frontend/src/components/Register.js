@@ -15,9 +15,111 @@ const Register = () => {
   });
   const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    message: '',
+    color: ''
+  });
+
+  const checkPasswordStrength = (password) => {
+    let score = 0;
+    let feedback = [];
+
+    // Length check
+    if (password.length >= 8) {
+      score += 1;
+    } else {
+      feedback.push('At least 8 characters');
+    }
+
+    // Special character check
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      score += 1;
+    } else {
+      feedback.push('Special character');
+    }
+
+    // Number check
+    if (/\d/.test(password)) {
+      score += 1;
+    } else {
+      feedback.push('Number');
+    }
+
+    // Uppercase letter check
+    if (/[A-Z]/.test(password)) {
+      score += 1;
+    } else {
+      feedback.push('Uppercase letter');
+    }
+
+    // Lowercase letter check
+    if (/[a-z]/.test(password)) {
+      score += 1;
+    } else {
+      feedback.push('Lowercase letter');
+    }
+
+    // Set strength message and color
+    let strengthMessage = '';
+    let strengthColor = '';
+
+    switch (score) {
+      case 0:
+      case 1:
+        strengthMessage = 'Very Weak';
+        strengthColor = '#ff4444';
+        break;
+      case 2:
+        strengthMessage = 'Weak';
+        strengthColor = '#ffbb33';
+        break;
+      case 3:
+        strengthMessage = 'Moderate';
+        strengthColor = '#ffbb33';
+        break;
+      case 4:
+        strengthMessage = 'Strong';
+        strengthColor = '#00C851';
+        break;
+      case 5:
+        strengthMessage = 'Very Strong';
+        strengthColor = '#007E33';
+        break;
+      default:
+        break;
+    }
+
+    return {
+      score,
+      message: strengthMessage,
+      feedback: feedback.length > 0 ? `Missing: ${feedback.join(', ')}` : '',
+      color: strengthColor
+    };
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'password') {
+      setPasswordStrength(checkPasswordStrength(value));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Check if password meets minimum requirements (score >= 3)
+    const strength = checkPasswordStrength(formData.password);
+    if (strength.score < 3) {
+      setMessage({
+        text: 'Password is too weak. Please create a stronger password.',
+        type: 'error'
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -31,7 +133,6 @@ const Register = () => {
         type: 'success' 
       });
 
-      // Store registration data for login
       localStorage.setItem('registeredUserName', formData.userName);
       
       setTimeout(() => {
@@ -53,15 +154,24 @@ const Register = () => {
 
   return (
     <div className="auth-container">
+      <button className="back-button" onClick={() => navigate('/')}>
+        <i className="fas fa-arrow-left"></i>
+      </button>
       <div className="auth-card">
         <h2>Register</h2>
+        {message.text && (
+          <div className={`message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label>Account Name</label>
             <input
               type="text"
+              name="accountName"
               value={formData.accountName}
-              onChange={(e) => setFormData({...formData, accountName: e.target.value.trim()})}
+              onChange={handleChange}
               required
               placeholder="Enter account name"
               disabled={loading}
@@ -71,8 +181,9 @@ const Register = () => {
             <label>Username</label>
             <input
               type="text"
+              name="userName"
               value={formData.userName}
-              onChange={(e) => setFormData({...formData, userName: e.target.value.trim()})}
+              onChange={handleChange}
               required
               placeholder="Enter username"
               disabled={loading}
@@ -82,19 +193,41 @@ const Register = () => {
             <label>Password</label>
             <input
               type="password"
+              name="password"
               value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={handleChange}
               required
               placeholder="Enter password"
               disabled={loading}
             />
+            {formData.password && (
+              <div className="password-strength">
+                <div className="password-strength-bar">
+                  <div style={{ 
+                    height: '100%', 
+                    width: `${(passwordStrength.score / 5) * 100}%`,
+                    backgroundColor: passwordStrength.color,
+                    transition: 'all 0.3s ease'
+                  }}></div>
+                </div>
+                <div className="password-strength-text" style={{ color: passwordStrength.color }}>
+                  {passwordStrength.message}
+                </div>
+                {passwordStrength.feedback && (
+                  <div className="password-strength-feedback">
+                    {passwordStrength.feedback}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="form-group">
             <label>Email</label>
             <input
               type="email"
+              name="email"
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value.trim()})}
+              onChange={handleChange}
               required
               placeholder="Enter email"
               disabled={loading}
@@ -103,8 +236,9 @@ const Register = () => {
           <div className="form-group">
             <label>Role</label>
             <select
+              name="role"
               value={formData.role}
-              onChange={(e) => setFormData({...formData, role: e.target.value})}
+              onChange={handleChange}
               required
               disabled={loading}
             >
@@ -123,11 +257,6 @@ const Register = () => {
             Already have an account? <span onClick={() => navigate('/login')}>Login</span>
           </p>
         </form>
-        {message.text && (
-          <div className={`message ${message.type}`}>
-            {message.text}
-          </div>
-        )}
       </div>
     </div>
   );

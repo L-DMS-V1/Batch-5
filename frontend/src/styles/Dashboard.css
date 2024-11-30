@@ -1,18 +1,59 @@
 .dashboard-container {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  min-height: 100vh;
 }
 
 .dashboard-header {
-  text-align: center;
-  margin-bottom: 30px;
-  padding: 20px;
+  background-color: #1a237e;
+  color: white;
+  padding: 1rem 2rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .dashboard-header h1 {
   margin: 0;
-  color: #333;
+  color: white;
+  font-size: 1.5rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.logout-button, .action-button {
+  background-color: transparent;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+  border-radius: 4px;
+}
+
+.logout-button:hover, .action-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.logout-button i, .action-button i {
+  font-size: 1.2rem;
+}
+
+.dashboard-main {
+  padding-top: 80px; /* Add padding to account for fixed header */
+  padding: 80px 2rem 2rem 2rem;
 }
 
 .button-group {
@@ -29,29 +70,23 @@
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  font-size: 14px;
-}
-
-.back-button {
-  background-color: #6c757d;
+  background-color: transparent;
   color: white;
+  transition: background-color 0.3s;
 }
 
-.back-button:hover {
-  background-color: #5a6268;
+.back-button:hover, .logout-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .logout-button {
-  background-color: #dc3545;
-  color: white;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.logout-button:hover {
-  background-color: #c82333;
+.logout-button i {
+  font-size: 1.2em;
 }
 
 .dashboard-content {
@@ -219,8 +254,6 @@
   color: #1a1e1c;
   transition: color 0.3s ease;
 }
-
-
 
 .section-content {
   text-align: center;
@@ -849,4 +882,442 @@ th, td {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+.update-button {
+  background-color: #ffc107;
+  color: #000;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.update-button:hover {
+  background-color: #e0a800;
+}
+
+/* Progress Modal Styles */
+.progress-container {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.course-progress-item {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.course-progress-item:hover {
+  transform: translateY(-2px);
+}
+
+.course-progress-item h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e9ecef;
+  font-size: 1.3em;
+  font-weight: 600;
+}
+
+.employee-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.employee-progress {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.employee-progress:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.employee-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.employee-name {
+  font-weight: 600;
+  color: #34495e;
+  font-size: 1.1em;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+.status-badge.completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.near-complete {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.status-badge.in-progress {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.started {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-badge.not-started {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.progress-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.progress-bar-container {
+  position: relative;
+  height: 20px;
+  background: transparent;
+  margin: 10px 0;
+}
+
+.progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  transition: width 0.5s ease;
+  opacity: 0.85;
+  z-index: 1;
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.progress-bar.completed {
+  background: linear-gradient(135deg, #00b09b, #96c93d);
+  animation: shimmer 2s infinite linear;
+}
+
+.progress-bar.near-complete {
+  background: linear-gradient(135deg, #2193b0, #6dd5ed);
+}
+
+.progress-bar.in-progress {
+  background: linear-gradient(135deg, #f6d365, #fda085);
+}
+
+.progress-bar.started {
+  background: linear-gradient(135deg, #ff758c, #ff7eb3);
+}
+
+.progress-bar.not-started {
+  background: linear-gradient(135deg, #8e9eab, #eef2f3);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.employee-progress {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.employee-progress:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.progress-text {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #2c3e50;
+  font-weight: 700;
+  font-size: 1.1em;
+  text-shadow: 2px 2px 4px rgba(255,255,255,0.9);
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Modal enhancements */
+.modal-content {
+  background: #f8f9fa;
+  border-radius: 15px;
+  padding: 25px;
+}
+
+.modal-content h2 {
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.close-button {
+  padding: 8px 20px;
+  border-radius: 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.close-button:hover {
+  background: #5a6268;
+}
+
+.re-request-button {
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+}
+
+.re-request-button:hover {
+  background-color: #357abd;
+}
+
+.re-evaluate-button {
+  padding: 6px 12px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+}
+
+.re-evaluate-button:hover {
+  background-color: #218838;
+}
+
+/* Action buttons in admin dashboard */
+.admin-action-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+  margin: 0 4px;
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.admin-action-button:hover {
+  background-color: #d0d0d0;
+}
+
+/* Accept button - Soft blue */
+.accept-button {
+  background-color: #4a90e2 !important;
+  color: white !important;
+}
+
+.accept-button:hover {
+  background-color: #357abd !important;
+}
+
+/* Reject button - Soft red */
+.reject-button {
+  background-color: #e57373 !important;
+  color: white !important;
+}
+
+.reject-button:hover {
+  background-color: #d32f2f !important;
+}
+
+/* Re-evaluate button - Soft purple */
+.re-evaluate-button {
+  background-color: #9575cd !important;
+  color: white !important;
+}
+
+.re-evaluate-button:hover {
+  background-color: #7e57c2 !important;
+}
+
+/* Create Course button - Soft green */
+.create-course-button {
+  background-color: #66bb6a !important;
+  color: white !important;
+}
+
+.create-course-button:hover {
+  background-color: #4caf50 !important;
+}
+
+/* Feedback Modal Styles */
+.feedback-modal {
+  width: 80%;
+  max-width: 800px;
+}
+
+.feedback-container {
+  padding: 20px;
+}
+
+.course-selector {
+  margin-bottom: 20px;
+}
+
+.course-selector label {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.course-selector select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  min-width: 200px;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #4a90e2;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.nav-buttons button:hover {
+  background-color: #357abd;
+}
+
+.feedback-stats {
+  margin: 20px 0;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.rating-bar {
+  display: flex;
+  align-items: center;
+  margin: 8px 0;
+  gap: 10px;
+}
+
+.bar-container {
+  flex: 1;
+  height: 20px;
+  background: #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.feedback-list {
+  margin-top: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.feedback-item {
+  padding: 15px;
+  margin: 10px 0;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.employee-name {
+  font-weight: bold;
+}
+
+.rating {
+  color: #f0ad4e;
+}
+
+.comments {
+  margin: 0;
+  color: #666;
 }

@@ -1,178 +1,159 @@
-// src/components/EmployeeDashboard.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { ENDPOINTS } from '../config/api';
+import { axiosInstance, ENDPOINTS } from '../config/api';
 import CourseFeedback from './CourseFeedback';
+import CourseResources from './CourseResources';
+import ChangePasswordModal from './ChangePasswordModal';
 import '../styles/EmployeeDashboard.css';
 
 const EmployeeDashboard = () => {
-  const navigate = useNavigate();
-  const [courses, setCourses] = useState([]);
+  const [assignedCourses, setAssignedCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [showResources, setShowResources] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [message, setMessage] = useState({ text: '', type: '' });
-  const employeeId = localStorage.getItem('employeeId');
-  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
-  const [selectedCourseForFeedback, setSelectedCourseForFeedback] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchCourses();
+    fetchAssignedCourses();
   }, []);
 
-  const fetchCourses = async () => {
+  const fetchAssignedCourses = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(
-        ENDPOINTS.EMPLOYEE_GET_COURSES(employeeId),
-        { headers: { 'Authorization': `Bearer ${token}` }}
-      );
-      setCourses(response.data);
+      setLoading(true);
+      const response = await axiosInstance.get(ENDPOINTS.EMPLOYEE_GET_COURSES);
+      setAssignedCourses(response.data);
+      setLoading(false);
     } catch (error) {
-      setMessage({ text: 'Error fetching courses', type: 'error' });
+      console.error('Error fetching assigned courses:', error);
+      setError('Failed to fetch assigned courses');
+      setLoading(false);
     }
   };
 
-  const handleCourseClick = async (courseId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(
-        ENDPOINTS.EMPLOYEE_GET_COURSE(employeeId, courseId),
-        { headers: { 'Authorization': `Bearer ${token}` }}
-      );
-      setSelectedCourse(response.data);
-    } catch (error) {
-      setMessage({ text: 'Error fetching course details', type: 'error' });
-    }
+  const handleGoToCourse = (courseId) => {
+    setSelectedCourse(courseId);
+    setShowResources(true);
   };
 
-  const handleResourceCompletion = async (resourceId, completed) => {
-    try {
-      const token = localStorage.getItem('token');
-      const endpoint = completed ? 
-        ENDPOINTS.EMPLOYEE_MARK_COMPLETED(employeeId, resourceId) :
-        ENDPOINTS.EMPLOYEE_MARK_NOT_COMPLETED(employeeId, resourceId);
-      
-      const response = await axios.put(
-        endpoint,
-        {},
-        { headers: { 'Authorization': `Bearer ${token}` }}
-      );
-
-      // If course is completed, show feedback form
-      if (response.data.message === "Course completed") {
-        setSelectedCourseForFeedback(selectedCourse);
-        setShowFeedbackForm(true);
-      }
-
-      setMessage({ text: response.data.message, type: 'success' });
-      
-      // Refresh course details
-      if (selectedCourse) {
-        handleCourseClick(selectedCourse.courseId);
-      }
-    } catch (error) {
-      setMessage({ text: 'Error updating resource status', type: 'error' });
-    }
+  const handleBackToCourses = () => {
+    setSelectedCourse(null);
+    setShowResources(false);
+    fetchAssignedCourses(); // Refresh courses to update completion status
   };
 
-  const handleSubmitFeedback = async (courseId, assignmentId, feedback) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        ENDPOINTS.EMPLOYEE_SUBMIT_FEEDBACK(courseId, assignmentId),
-        feedback,
-        { headers: { 'Authorization': `Bearer ${token}` }}
-      );
-      setMessage({ text: 'Feedback submitted successfully', type: 'success' });
-    } catch (error) {
-      setMessage({ text: 'Error submitting feedback', type: 'error' });
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
   };
 
   return (
     <div className="dashboard-container">
-      <nav className="dashboard-nav">
-        <div className="nav-brand">LearningHub</div>
-        <div className="nav-links">
-          <button className="nav-button" onClick={() => navigate('/profile')}>
-            <i className="fas fa-user"></i>
+      <div className="dashboard-header">
+        <h1>Employee Dashboard</h1>
+        <div className="button-group">
+          <button className="action-button" onClick={() => setShowPasswordModal(true)}>
+            <i className="fas fa-key"></i> Change Password
           </button>
-          <button className="nav-button" onClick={() => {
-            localStorage.clear();
-            navigate('/');
-          }}>
-            <i className="fas fa-sign-out-alt"></i>
+          <button className="logout-button" onClick={handleLogout}>
+            <i className="fas fa-sign-out-alt"></i> Logout
           </button>
         </div>
-      </nav>
+      </div>
 
       <div className="dashboard-main">
-        <div className="courses-section">
-          <h2>My Courses</h2>
-          <div className="courses-grid">
-            {courses.map(course => (
-              <div 
-                key={course.courseId} 
-                className="course-card"
-                onClick={() => handleCourseClick(course.courseId)}
-              >
-                <h3>{course.courseName}</h3>
-                <p>Duration: {course.duration}</p>
-                <p>Deadline: {course.deadLine}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {selectedCourse && (
-          <div className="course-details">
-            <h2>{selectedCourse.courseName}</h2>
-            <div className="course-info">
-              <p><strong>Key Concepts:</strong> {selectedCourse.keyConcepts}</p>
-              <p><strong>Duration:</strong> {selectedCourse.duration}</p>
-              <p><strong>Outcomes:</strong> {selectedCourse.outcomes}</p>
-            </div>
-
-            <div className="resources-list">
-              <h3>Resources</h3>
-              {selectedCourse.resourceLinksAndStatuses.map(resource => (
-                <div key={resource.resourceId} className="resource-item">
-                  <a href={resource.resourceLink} target="_blank" rel="noopener noreferrer">
-                    {resource.resourceLink}
-                  </a>
-                  <button
-                    onClick={() => handleResourceCompletion(
-                      resource.resourceId, 
-                      !resource.completed
-                    )}
-                    className={`status-button ${resource.completed ? 'completed' : ''}`}
-                  >
-                    {resource.completed ? 'Completed' : 'Mark as Complete'}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {message.text && (
-          <div className={`message ${message.type}`}>
-            {message.text}
-          </div>
-        )}
-
-        {showFeedbackForm && selectedCourseForFeedback && (
-          <CourseFeedback 
-            courseId={selectedCourseForFeedback.courseId}
-            assignmentId={selectedCourseForFeedback.assignmentId}
-            onSubmit={() => {
-              setShowFeedbackForm(false);
-              setSelectedCourseForFeedback(null);
-              fetchCourses(); // Refresh courses list
-            }}
+        {showResources && selectedCourse ? (
+          <CourseResources 
+            courseId={selectedCourse}
+            onBack={handleBackToCourses}
+            onResourceComplete={fetchAssignedCourses}
           />
+        ) : (
+          <>
+            <div className="welcome-section">
+              <h1>Welcome back, <span className="user-name">Employee</span>! 👋</h1>
+            </div>
+
+            <div className="stats-container">
+              <div className="stat-card">
+                <i className="fas fa-book stat-icon"></i>
+                <h3>Total Courses</h3>
+                <p className="stat-number">{assignedCourses.length}</p>
+              </div>
+
+              <div className="stat-card">
+                <i className="fas fa-check-circle stat-icon"></i>
+                <h3>Completed Courses</h3>
+                <p className="stat-number">
+                  {assignedCourses.filter(course => 
+                    course.resourceLinksAndStatuses?.every(r => r.completed)
+                  ).length}
+                </p>
+              </div>
+
+              <div className="stat-card">
+                <i className="fas fa-clock stat-icon"></i>
+                <h3>In Progress</h3>
+                <p className="stat-number">
+                  {assignedCourses.filter(course => 
+                    course.resourceLinksAndStatuses?.some(r => r.completed) &&
+                    !course.resourceLinksAndStatuses?.every(r => r.completed)
+                  ).length}
+                </p>
+              </div>
+            </div>
+
+            <div className="courses-section">
+              <h2>My Courses</h2>
+              {loading && <p>Loading courses...</p>}
+              {error && <p className="error-message">{error}</p>}
+              {!loading && !error && assignedCourses.length === 0 && (
+                <p>No courses assigned yet.</p>
+              )}
+              <div className="courses-grid">
+                {assignedCourses.map(course => (
+                  <div key={course.courseId} className="course-card">
+                    <div className="course-card-header">
+                      <h3>{course.courseName}</h3>
+                      <span className="course-status">
+                        {course.resourceLinksAndStatuses?.every(r => r.completed) 
+                          ? <i className="fas fa-check-circle completed"></i>
+                          : <i className="fas fa-clock in-progress"></i>
+                        }
+                      </span>
+                    </div>
+                    <div className="course-card-body">
+                      <p><i className="fas fa-clock"></i> Duration: {course.duration}</p>
+                      <p><i className="fas fa-calendar"></i> Deadline: {course.deadLine}</p>
+                      <p><i className="fas fa-lightbulb"></i> Key Concepts: {course.keyConcepts}</p>
+                    </div>
+                    <button 
+                      className="go-to-course-button"
+                      onClick={() => handleGoToCourse(course.courseId)}
+                    >
+                      Go to Course
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         )}
       </div>
+
+      {message.text && (
+        <div className={`message ${message.type}`}>
+          {message.text}
+        </div>
+      )}
+      {showPasswordModal && (
+        <ChangePasswordModal
+          isOpen={showPasswordModal}
+          onClose={() => setShowPasswordModal(false)}
+        />
+      )}
     </div>
   );
 };

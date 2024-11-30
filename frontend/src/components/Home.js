@@ -24,7 +24,6 @@ const Home = () => {
         <div className="logo">LearningHub</div>
         <nav>
           <Link to="/login" className="nav-link">Login</Link>
-          <Link to="/register" className="nav-link">Register</Link>
         </nav>
       </header>
       
@@ -32,7 +31,7 @@ const Home = () => {
         <div className="hero-section" ref={heroRef}>
           <h1 className="animate-text">Empower Your Workforce</h1>
           <p className="animate-text">Streamline training management and boost employee development</p>
-          <Link to="/register" className="cta-button animate-button">Get Started</Link>
+          <Link to="/register" className="cta-button animate-button">Register</Link>
         </div>
         
         <div className="features-section">
