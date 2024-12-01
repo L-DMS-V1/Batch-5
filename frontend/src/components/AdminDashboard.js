@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance, ENDPOINTS } from '../config/api';
 import '../styles/Dashboard.css';
+import '../styles/CourseProgress.css';
 import FeedbackChart from './FeedbackChart'; // Import the FeedbackChart component
 import ChangePasswordModal from './ChangePasswordModal';
 
@@ -253,17 +254,28 @@ const AdminDashboard = () => {
     try {
       const token = localStorage.getItem('token');
 
-      // Log the current form state
       console.log('Current course form:', courseForm);
 
+      // Validate resources - ensure at least one resource is properly filled
+      const validResources = courseForm.resources.filter(
+        resource => resource.resourceName && resource.resourceName.trim() !== '' && 
+                   resource.resourceLink && resource.resourceLink.trim() !== ''
+      );
+
+      if (validResources.length === 0) {
+        setMessage({ text: 'Please add at least one resource with both name and link', type: 'error' });
+        return;
+      }
+
+      // Create a clean form object
       const transformedCourseForm = {
-        courseName: courseForm.courseName,
-        keyConcepts: courseForm.keyConcepts,
-        duration: courseForm.duration,
-        outcomes: courseForm.outcomes,
-        resources: courseForm.resources.map(resource => ({
-          resourceName: resource.resourceName,
-          resourceLink: resource.resourceLink
+        courseName: courseForm.courseName.trim(),
+        keyConcepts: courseForm.keyConcepts.trim(),
+        duration: courseForm.duration.trim(),
+        outcomes: courseForm.outcomes.trim(),
+        resources: validResources.map(resource => ({
+          resourceNames: resource.resourceName.trim(),
+          resourceLinks: resource.resourceLink.trim()
         }))
       };
 
@@ -284,29 +296,42 @@ const AdminDashboard = () => {
           { headers: { 'Authorization': `Bearer ${token}` } }
         );
 
-        if (response.data) {
+        console.log('Course creation response:', response.data);
+        
+        if (response.data.courseCreationDto) {
           setMessage({ text: 'Course created successfully', type: 'success' });
+          const courseId = response.data.courseCreationDto.id;
+          
           // Set the courseId for assignment
           setAssignCourseForm(prev => ({
             ...prev,
-            courseId: response.data.courseId || response.data.id
+            courseId: courseId
           }));
           
           if (selectedRequest?.employeePosition) {
             await fetchEmployeesByPosition(selectedRequest.employeePosition);
             setShowAssignForm(true);
           }
+        } else {
+          setMessage({ text: 'Error creating course: Invalid response', type: 'error' });
         }
       }
 
-      // Reset form and refresh data
-      setSelectedCourseForUpdate(null);
+      // Reset form and close modal on success
+      setCourseForm({
+        courseId: '',
+        courseName: '',
+        keyConcepts: '',
+        duration: '',
+        resources: [{ resourceName: '', resourceLink: '' }],
+        outcomes: ''
+      });
       setShowCourseForm(false);
-      await fetchInitialData();
+      setSelectedCourseForUpdate(null);
+      fetchInitialData();
     } catch (error) {
-      console.error('Error submitting course:', error);
-      const errorMessage = error.response?.data?.error || 'Error submitting course';
-      setMessage({ text: errorMessage, type: 'error' });
+      console.error('Error submitting course form:', error);
+      setMessage({ text: error.response?.data?.message || 'Error submitting course form', type: 'error' });
     }
   };
 
@@ -940,12 +965,6 @@ const AdminDashboard = () => {
                         <i className="fas fa-user-plus"></i> Assign Employees
                       </button>
                       <button
-                        className="update-button"
-                        onClick={() => handleUpdateCourse(course.courseId)}
-                      >
-                        <i className="fas fa-edit"></i> Update Course
-                      </button>
-                      <button
                         className="delete-button"
                         onClick={() => handleDeleteCourse(course.courseId)}
                       >
@@ -1119,6 +1138,15 @@ const AdminDashboard = () => {
                     onClick={() => {
                       setShowCourseForm(false);
                       setSelectedCourseForUpdate(null);
+                      setSelectedRequest(null);
+                      setCourseForm({
+                        courseId: '',
+                        courseName: '',
+                        keyConcepts: '',
+                        duration: '',
+                        resources: [{ resourceName: '', resourceLink: '' }],
+                        outcomes: ''
+                      });
                     }}
                   >
                     Cancel
@@ -1185,28 +1213,57 @@ const AdminDashboard = () => {
                 )}
                 <div className="form-group">
                   <label>Select Employees {selectedRequest.requiredEmployees > 0 && `(Required: ${selectedRequest.requiredEmployees})`}</label>
-                  <div className="employees-list">
-                    {employees.map((employee) => (
-                      <div key={employee.employeeId} className="employee-item">
-                        <input
-                          type="checkbox"
-                          id={`employee-${employee.employeeId}`}
-                          checked={assignCourseForm.employeeIds.includes(employee.employeeId)}
-                          onChange={(e) => {
-                            const newEmployeeIds = e.target.checked
-                              ? [...assignCourseForm.employeeIds, employee.employeeId]
-                              : assignCourseForm.employeeIds.filter(id => id !== employee.employeeId);
-                            setAssignCourseForm({
-                              ...assignCourseForm,
-                              employeeIds: newEmployeeIds
-                            });
-                          }}
-                        />
-                        <label htmlFor={`employee-${employee.employeeId}`}>
-                          {employee.userName} - {employee.position}
-                        </label>
-                      </div>
+                  <select 
+                    className="employee-select"
+                    value=""
+                    onChange={(e) => {
+                      const employeeId = parseInt(e.target.value);
+                      if (employeeId) {
+                        const newEmployeeIds = [...assignCourseForm.employeeIds, employeeId];
+                        setAssignCourseForm({
+                          ...assignCourseForm,
+                          employeeIds: newEmployeeIds
+                        });
+                      }
+                    }}
+                  >
+                    <option value="">Select an employee</option>
+                    {employees.map(employee => (
+                      <option 
+                        key={employee.employeeId} 
+                        value={employee.employeeId}
+                        disabled={assignCourseForm.employeeIds.includes(employee.employeeId)}
+                      >
+                        {employee.userName} - {employee.position}
+                      </option>
                     ))}
+                  </select>
+
+                  <div className="selected-employees">
+                    <label>Selected Employees ({assignCourseForm.employeeIds.length} / {selectedRequest.requiredEmployees})</label>
+                    <div className="employees-list">
+                      {assignCourseForm.employeeIds.map(id => {
+                        const employee = employees.find(e => e.employeeId === id);
+                        return (
+                          <div key={id} className="selected-employee">
+                            <span>{employee?.userName} - {employee?.position}</span>
+                            <button 
+                              type="button"
+                              className="remove-employee-btn"
+                              onClick={() => {
+                                const newEmployeeIds = assignCourseForm.employeeIds.filter(eId => eId !== id);
+                                setAssignCourseForm({
+                                  ...assignCourseForm,
+                                  employeeIds: newEmployeeIds
+                                });
+                              }}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
                 <div className="form-buttons">
@@ -1291,28 +1348,57 @@ const AdminDashboard = () => {
                 )}
                 <div className="form-group">
                   <label>Select Employees {selectedRequest.requiredEmployees > 0 && `(Required: ${selectedRequest.requiredEmployees})`}</label>
-                  <div className="employees-list">
-                    {employees.map((employee) => (
-                      <div key={employee.employeeId} className="employee-item">
-                        <input
-                          type="checkbox"
-                          id={`employee-${employee.employeeId}`}
-                          checked={assignCourseForm.employeeIds.includes(employee.employeeId)}
-                          onChange={(e) => {
-                            const newEmployeeIds = e.target.checked
-                              ? [...assignCourseForm.employeeIds, employee.employeeId]
-                              : assignCourseForm.employeeIds.filter(id => id !== employee.employeeId);
-                            setAssignCourseForm({
-                              ...assignCourseForm,
-                              employeeIds: newEmployeeIds
-                            });
-                          }}
-                        />
-                        <label htmlFor={`employee-${employee.employeeId}`}>
-                          {employee.userName} - {employee.position}
-                        </label>
-                      </div>
+                  <select 
+                    className="employee-select"
+                    value=""
+                    onChange={(e) => {
+                      const employeeId = parseInt(e.target.value);
+                      if (employeeId) {
+                        const newEmployeeIds = [...assignCourseForm.employeeIds, employeeId];
+                        setAssignCourseForm({
+                          ...assignCourseForm,
+                          employeeIds: newEmployeeIds
+                        });
+                      }
+                    }}
+                  >
+                    <option value="">Select an employee</option>
+                    {employees.map(employee => (
+                      <option 
+                        key={employee.employeeId} 
+                        value={employee.employeeId}
+                        disabled={assignCourseForm.employeeIds.includes(employee.employeeId)}
+                      >
+                        {employee.userName} - {employee.position}
+                      </option>
                     ))}
+                  </select>
+
+                  <div className="selected-employees">
+                    <label>Selected Employees ({assignCourseForm.employeeIds.length} / {selectedRequest.requiredEmployees})</label>
+                    <div className="employees-list">
+                      {assignCourseForm.employeeIds.map(id => {
+                        const employee = employees.find(e => e.employeeId === id);
+                        return (
+                          <div key={id} className="selected-employee">
+                            <span>{employee?.userName} - {employee?.position}</span>
+                            <button 
+                              type="button"
+                              className="remove-employee-btn"
+                              onClick={() => {
+                                const newEmployeeIds = assignCourseForm.employeeIds.filter(eId => eId !== id);
+                                setAssignCourseForm({
+                                  ...assignCourseForm,
+                                  employeeIds: newEmployeeIds
+                                });
+                              }}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
                 <div className="form-buttons">
@@ -1370,8 +1456,8 @@ const AdminDashboard = () => {
                             <div className="progress-details">
                               <div className="progress-bar-container">
                                 <div 
-                                  className={`progress-bar ${
-                                    employee.completionPercentage === 100 ? 'completed' :
+                                  className={`progress-bar-fill ${
+                                    employee.completionPercentage === 100 ? 'complete' :
                                     employee.completionPercentage >= 75 ? 'near-complete' :
                                     employee.completionPercentage >= 50 ? 'in-progress' :
                                     employee.completionPercentage >= 25 ? 'started' : 'not-started'
