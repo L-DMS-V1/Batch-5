@@ -41,7 +41,7 @@ public class UserServiceImpl implements UserService{
 
     @Override
     @Transactional
-    public User addUser(UserRegistrationDto userRegistrationDto) throws Exception {
+    public void addUser(UserRegistrationDto userRegistrationDto) throws Exception {
         if(userRepository.existsByUserName(userRegistrationDto.getUserName()))
         {
             throw new Exception("User already exists");
@@ -67,7 +67,6 @@ public class UserServiceImpl implements UserService{
             manager.setUser(user);
             managerRepository.save(manager);
         }
-        return user;
     }
 
     @Override

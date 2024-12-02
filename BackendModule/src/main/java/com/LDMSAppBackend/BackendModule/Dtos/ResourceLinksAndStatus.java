@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ResourceLinksAndStatus {
     private Long resourceId;
+    private String resourceName;
     private String resourceLink;
     private boolean completed;
 }

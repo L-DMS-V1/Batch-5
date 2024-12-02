@@ -7,7 +7,6 @@ import com.LDMSAppBackend.BackendModule.enums.CourseStatus;
 import com.LDMSAppBackend.BackendModule.repositories.CourseAssignmentRepository;
 import com.LDMSAppBackend.BackendModule.repositories.CourseProgressRepository;
 import com.LDMSAppBackend.BackendModule.repositories.ResourceLinkCompletionRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

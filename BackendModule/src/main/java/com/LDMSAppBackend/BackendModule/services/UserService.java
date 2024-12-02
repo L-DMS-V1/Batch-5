@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 public interface UserService {
 
     User validateUser(String username);
-    User addUser(UserRegistrationDto user) throws Exception;
+    void addUser(UserRegistrationDto user) throws Exception;
     void removeUser(User user);
     User updateUser(User user);
     void setPassword(String password);

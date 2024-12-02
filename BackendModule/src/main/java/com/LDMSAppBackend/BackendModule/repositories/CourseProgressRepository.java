@@ -6,5 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CourseProgressRepository extends JpaRepository<CourseProgress, Integer> {
-    CourseProgress findByCourseAssignment_AssignmentId(Long assignmentId);
 }

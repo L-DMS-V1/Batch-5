@@ -68,6 +68,7 @@ public class ResourceLinkCompletionService {
         ResourceLinkCompletion resourceLinkCompletion = resourceLinkCompletionRepository.findByEmployeeAndResource(employeeId,resourceId).orElseThrow();
         Resources resourceLink = resourceLinkCompletion.getResource();
         resourceLinksAndStatus.setResourceId(resourceLink.getResourceId());
+        resourceLinksAndStatus.setResourceName(resourceLink.getResourceName());
         resourceLinksAndStatus.setResourceLink(resourceLink.getResourceLink());
         resourceLinksAndStatus.setCompleted(resourceLinkCompletion.getCompleted());
         return resourceLinksAndStatus;

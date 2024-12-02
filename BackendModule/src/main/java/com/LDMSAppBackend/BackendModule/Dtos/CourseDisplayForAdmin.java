@@ -12,5 +12,7 @@ public class CourseDisplayForAdmin {
 
     private String courseName;
 
+    private String keyConcepts;
+
     private String duration;
 }

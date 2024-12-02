@@ -1,6 +1,5 @@
 package com.LDMSAppBackend.BackendModule.repositories;
 
-import com.LDMSAppBackend.BackendModule.entites.Course;
 import com.LDMSAppBackend.BackendModule.entites.CourseAssignment;
 import com.LDMSAppBackend.BackendModule.entites.CourseProgress;
 import com.LDMSAppBackend.BackendModule.entites.Employee;
@@ -20,5 +19,4 @@ public interface CourseAssignmentRepository extends JpaRepository<CourseAssignme
 	Optional<CourseAssignment> findByCourse_CourseIdAndEmployee(Long courseId,Employee employee);
 	Optional<CourseAssignment> findByCourse_CourseIdAndEmployee_EmployeeId(Long courseId, Integer employeeId);
 
-    List<CourseAssignment> findByCourse(Course existingCourse);
 }

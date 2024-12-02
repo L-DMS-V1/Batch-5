@@ -194,7 +194,7 @@ public class CourseService {
         );
     }private CourseDisplayForAdmin mapToCoursesForAdminDto(Course course) {
         return new CourseDisplayForAdmin(
-                course.getCourseId(),course.getCourseName(),course.getDuration()
+                course.getCourseId(),course.getCourseName(),course.getKeyConcepts(),course.getDuration()
         );
     }
 
