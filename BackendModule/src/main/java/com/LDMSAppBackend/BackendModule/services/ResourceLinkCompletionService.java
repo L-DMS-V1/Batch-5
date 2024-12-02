@@ -39,9 +39,8 @@ public class ResourceLinkCompletionService {
         // Update completion status
         resourceLinkCompletion.setCompleted(true);
         resourceLinkCompletionRepository.save(resourceLinkCompletion);
-
         // Update course progress for the corresponding course
-        Long courseId = (Long) resourceLinkCompletion.getResource().getCourse().getCourseId();
+        Long courseId = resourceLinkCompletion.getResource().getCourse().getCourseId();
         return courseProgressService.updateCourseProgress(employee.getEmployeeId(), courseId);
     }
 

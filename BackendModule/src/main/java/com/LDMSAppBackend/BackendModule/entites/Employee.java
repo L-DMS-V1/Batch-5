@@ -23,5 +23,4 @@ public @Data class Employee {
     @Column(name="contact",length=10)
     private String contact;
 
-
 }

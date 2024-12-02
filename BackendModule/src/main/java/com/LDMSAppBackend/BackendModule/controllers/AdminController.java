@@ -124,7 +124,7 @@ public class AdminController {
         }
         catch (IllegalArgumentException e)
         {
-            return ResponseEntity.badRequest().body(e);
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
         return ResponseEntity.ok(courseAssignmentResponseDto);
     }
@@ -138,28 +138,6 @@ public class AdminController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
         return ResponseEntity.ok("Course with course Id: "+courseId + " is deleted");
-    }
-
-    @PutMapping("/course/update/{courseId}")
-    public ResponseEntity<?> updateCourse(@PathVariable("courseId") Long courseId,@RequestBody @Valid CourseCreationDto courseCreationDto, BindingResult bindingResult)
-    {
-        // Handle validation errors
-        if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            bindingResult.getFieldErrors().forEach(error -> {
-                errors.put(error.getField(), error.getDefaultMessage());
-            });
-            return ResponseEntity.badRequest().body(errors);
-        }
-        CourseCreationDto course = null;
-        try{
-          course =  courseService.updateCourse(courseId,courseCreationDto);
-        }
-        catch (Exception e)
-        {
-            return ResponseEntity.internalServerError().body(e.getMessage());
-        }
-        return ResponseEntity.ok(course);
     }
 
     @GetMapping("/requests/pending")

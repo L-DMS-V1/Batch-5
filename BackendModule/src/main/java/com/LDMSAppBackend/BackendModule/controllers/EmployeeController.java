@@ -44,7 +44,7 @@ public class EmployeeController {
         return ResponseEntity.ok(courses);
     }
     @GetMapping("/getCourse/{courseId}")
-    public ResponseEntity<?> getCourse( @PathVariable("courseId") Long courseId)
+    public ResponseEntity<?> getCourse(@PathVariable("courseId") Long courseId)
     {
         CourseAssignedToEmployee course;
         try{
@@ -90,6 +90,7 @@ public class EmployeeController {
             });
             return ResponseEntity.badRequest().body(errors);
         }
+        System.out.println("submitting feedback....");
         try {
             feedBackService.addFeedback(feedBackDto,courseId,assignmentId);
         } catch (RuntimeException e) {

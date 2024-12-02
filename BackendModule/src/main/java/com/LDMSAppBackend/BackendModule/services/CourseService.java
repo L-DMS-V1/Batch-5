@@ -3,10 +3,7 @@ package com.LDMSAppBackend.BackendModule.services;
 import com.LDMSAppBackend.BackendModule.Dtos.*;
 import com.LDMSAppBackend.BackendModule.entites.*;
 import com.LDMSAppBackend.BackendModule.enums.CourseStatus;
-import com.LDMSAppBackend.BackendModule.repositories.CourseAssignmentRepository;
-import com.LDMSAppBackend.BackendModule.repositories.CourseRepository;
-import com.LDMSAppBackend.BackendModule.repositories.EmployeeRepository;
-import com.LDMSAppBackend.BackendModule.repositories.ResourcesRepository;
+import com.LDMSAppBackend.BackendModule.repositories.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,17 +18,17 @@ public class CourseService {
     private final CourseAssignmentRepository courseAssignmentRepository;
     private final EmployeeRepository employeeRepository;
     private final ResourceLinkCompletionService resourceLinkCompletionService;
-    private final ResourcesRepository resourcesRepository;
+    private final TrainingRepository trainingRepository;
 
     @Autowired
     public CourseService(CourseRepository courseRepository,
                          CourseAssignmentRepository courseAssignmentRepository,
-                         EmployeeRepository employeeRepository, ResourceLinkCompletionService resourceLinkCompletionService, ResourcesRepository resourcesRepository) {
+                         EmployeeRepository employeeRepository, ResourceLinkCompletionService resourceLinkCompletionService, TrainingRepository trainingRepository) {
         this.courseRepository = courseRepository;
         this.courseAssignmentRepository = courseAssignmentRepository;
         this.employeeRepository = employeeRepository;
         this.resourceLinkCompletionService = resourceLinkCompletionService;
-        this.resourcesRepository = resourcesRepository;
+        this.trainingRepository = trainingRepository;
     }
 
     // Create a new course
@@ -57,24 +54,6 @@ public class CourseService {
         return courses.stream().map(this::mapToCoursesForAdminDto).collect(Collectors.toList());
     }
 
-    // Update an existing course
-    public CourseCreationDto updateCourse(Long courseId, CourseCreationDto courseCreationDto) {
-        Course existingCourse = courseRepository.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Course with ID " + courseId + " not found."));
-
-        existingCourse.setCourseName(courseCreationDto.getCourseName());
-        existingCourse.setKeyConcepts(courseCreationDto.getKeyConcepts());
-        existingCourse.setDuration(courseCreationDto.getDuration());
-        existingCourse.setOutcomes(courseCreationDto.getOutcomes());
-
-        // Update resources
-        List<Resources> updatedResources = mapToResourceEntities(courseCreationDto.getResources());
-        existingCourse.getResources().clear();
-        existingCourse.getResources().addAll(updatedResources);
-
-        Course updatedCourse = courseRepository.save(existingCourse);
-        return mapToCourseDto(updatedCourse);
-    }
 
     // Delete a course by ID
     public void deleteCourse(Long courseId) {
@@ -97,6 +76,7 @@ public class CourseService {
     public CourseAssignmentResponseDto assignCourses(CourseAssignmentDto courseAssignmentDto) {
         Course course = courseRepository.findByCourseId(courseAssignmentDto.getCourseId());
         if (course == null) {
+
             throw new IllegalArgumentException("Course with ID " + courseAssignmentDto.getCourseId() + " does not exist.");
         }
 
@@ -239,7 +219,7 @@ public class CourseService {
         course.setOutcomes(courseCreationDto.getOutcomes());
 
         // Map resources and associate them with the course
-        List<Resources> resources = mapToResourceEntities(courseCreationDto.getResources());
+        List<Resources> resources = mapToResourceEntities(courseCreationDto.getResources(),course);
         for (Resources resource : resources) {
             resource.setCourse(course); // Set the course for each resource
         }
@@ -250,16 +230,15 @@ public class CourseService {
 
 
     // Helper method to map ResourceLinksDto to Resources entity
-    private List<Resources> mapToResourceEntities(List<ResourcesDto> resourcesDtos) {
+    private List<Resources> mapToResourceEntities(List<ResourcesDto> resourcesDtos, Course course) {
         List<Resources> resourcesList = new ArrayList<>();
         for (ResourcesDto resourceDto : resourcesDtos) {
             Resources resource = new Resources();
             resource.setResourceLink(resourceDto.getResourceLinks());
             resource.setResourceName(resourceDto.getResourceNames());
+            resource.setCourse(course);
             resourcesList.add(resource);
         }
         return resourcesList;
     }
-
-
 }

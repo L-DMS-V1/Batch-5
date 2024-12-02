@@ -31,14 +31,13 @@ public class CourseProgressService {
         this.courseAssignmentRepository = courseAssignmentRepository;
     }
 
-    @Transactional
     public String updateCourseProgress(Integer employeeId, Long courseId) {
         // Fetch total links
-        Long totalLinksCount = resourceLinkCompletionRepository.countTotalLinks(courseId);
+        Long totalLinksCount = resourceLinkCompletionRepository.countTotalLinksByEmployeeAndCourse(courseId,employeeId);
         int totalLinks = totalLinksCount != null ? totalLinksCount.intValue() : 0;
 
         // Fetch completed links
-        Long completedLinksCount = resourceLinkCompletionRepository.countCompletedLinks(courseId);
+        Long completedLinksCount = resourceLinkCompletionRepository.countCompletedLinksByEmployeeAndCourse(courseId,employeeId);
         int completedLinks = completedLinksCount != null ? completedLinksCount.intValue() : 0;
 
         // Calculate progress percentage
@@ -63,9 +62,6 @@ public class CourseProgressService {
         }
         return "Great job! you can go to next resource";
     }
-
-
-
 
     public List<CourseProgressDisplayDto> getAllProgress()
     {
