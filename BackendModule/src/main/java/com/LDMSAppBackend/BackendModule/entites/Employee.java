@@ -23,4 +23,8 @@ public @Data class Employee {
     @Column(name="contact",length=10)
     private String contact;
 
+    @JsonBackReference
+    @ManyToOne
+    @JoinColumn(referencedColumnName = "managerId",nullable = false)
+    private Manager manager;
 }

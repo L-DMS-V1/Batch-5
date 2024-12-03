@@ -1,8 +1,9 @@
 package com.LDMSAppBackend.BackendModule.services;
 
-import com.LDMSAppBackend.BackendModule.Dtos.EmployeeInfoForAdmin;
-import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestDto;
-import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestResponse;
+import com.LDMSAppBackend.BackendModule.Dtos.RequestDtos.ManagerNameAndEmployeePosition;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.EmployeeInfoForAdmin;
+import com.LDMSAppBackend.BackendModule.Dtos.RequestDtos.TrainingRequestDto;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.TrainingRequestResponse;
 import com.LDMSAppBackend.BackendModule.entites.Employee;
 import com.LDMSAppBackend.BackendModule.entites.Manager;
 import com.LDMSAppBackend.BackendModule.entites.TrainingRequest;
@@ -114,9 +115,9 @@ public class TrainingRequestService {
         return trainingRequestResponses;
     }
 
-    public List<EmployeeInfoForAdmin> getEmployeesByPosition(String position)
+    public List<EmployeeInfoForAdmin> getEmployeesByPositionAndManagerName(ManagerNameAndEmployeePosition managerNameAndEmployeePosition)
     {
-        List<Employee> employees = employeeRepository.findByPosition(position);
+        List<Employee> employees = employeeRepository.findByManagerNameAndEmployeePosition(managerNameAndEmployeePosition.getManagerName(),managerNameAndEmployeePosition.getPosition());
         List<EmployeeInfoForAdmin> employeeInfoForAdminList = new ArrayList<>();
         for(Employee employee:employees)
         {

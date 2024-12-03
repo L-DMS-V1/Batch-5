@@ -1,4 +1,4 @@
-package com.LDMSAppBackend.BackendModule.Dtos;
+package com.LDMSAppBackend.BackendModule.Dtos.RequestDtos;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -29,5 +29,8 @@ public class CourseCreationDto {
 
     @NotEmpty(message = "Outcomes are required")
     private String outcomes;
+
+    @NotEmpty(message = "manager user name cannot be empty")
+    private String managerName;
 }
 

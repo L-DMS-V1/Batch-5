@@ -1,7 +1,7 @@
 package com.LDMSAppBackend.BackendModule.services;
 
 
-import com.LDMSAppBackend.BackendModule.Dtos.ResourceLinksAndStatus;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.ResourceLinksAndStatus;
 import com.LDMSAppBackend.BackendModule.entites.Employee;
 import com.LDMSAppBackend.BackendModule.entites.ResourceLinkCompletion;
 import com.LDMSAppBackend.BackendModule.entites.Resources;

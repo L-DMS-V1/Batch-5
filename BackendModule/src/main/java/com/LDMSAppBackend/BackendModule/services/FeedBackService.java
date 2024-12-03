@@ -1,7 +1,7 @@
 package com.LDMSAppBackend.BackendModule.services;
 
-import com.LDMSAppBackend.BackendModule.Dtos.FeedBackDto;
-import com.LDMSAppBackend.BackendModule.Dtos.FeedBackViewDto;
+import com.LDMSAppBackend.BackendModule.Dtos.RequestDtos.FeedBackDto;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.FeedBackViewDto;
 import com.LDMSAppBackend.BackendModule.entites.Course;
 import com.LDMSAppBackend.BackendModule.entites.CourseAssignment;
 import com.LDMSAppBackend.BackendModule.entites.Feedback;

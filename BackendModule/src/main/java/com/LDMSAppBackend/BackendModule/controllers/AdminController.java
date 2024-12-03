@@ -1,11 +1,14 @@
 package com.LDMSAppBackend.BackendModule.controllers;
 
-import com.LDMSAppBackend.BackendModule.Dtos.*;
+import com.LDMSAppBackend.BackendModule.Dtos.RequestDtos.*;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.*;
 import com.LDMSAppBackend.BackendModule.enums.Role;
+import com.LDMSAppBackend.BackendModule.exceptions.DuplicateUserException;
 import com.LDMSAppBackend.BackendModule.services.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -40,7 +43,7 @@ public class AdminController {
     }
 
     @PostMapping("/addEmployee")
-    public ResponseEntity<?> addEmployee(@RequestBody @Valid EmployeeRegistrationDto employeeRegistrationDto,BindingResult bindingResult)
+    public ResponseEntity<?> addEmployee(@RequestBody @Valid EmployeeRegistrationDto employeeRegistrationDto, BindingResult bindingResult)
     {
         // Handle validation errors
         if (bindingResult.hasErrors()) {
@@ -63,6 +66,29 @@ public class AdminController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
         return ResponseEntity.ok("Employee created successfully");
+    }
+
+    @PostMapping("/addManager")
+    public  ResponseEntity<?> addManager(@RequestBody @Valid UserRegistrationDto userRegistrationDto, BindingResult bindingResult)
+    {
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error -> {
+                errors.put(error.getField(), error.getDefaultMessage());
+            });
+            return ResponseEntity.badRequest().body(errors);
+        }
+        try{
+            userService.addUser(userRegistrationDto);
+        }
+        catch (DataIntegrityViolationException | DuplicateUserException e)
+        {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
+        catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+        return ResponseEntity.ok("Manager has been added successfully");
     }
 
     @PutMapping("/acceptRequest/{requestId}")
@@ -189,10 +215,23 @@ public class AdminController {
           return ResponseEntity.ok(courseProgressDisplayDtos);
     }
 
-    @GetMapping("/getAllEmployeesByPosition/{position}")
-    public ResponseEntity<?> getEmployeeByPosition(@PathVariable("position") String position)
+    @GetMapping("/getAllEmployeesByPosition")
+    public ResponseEntity<?> getEmployeeByPosition(@RequestBody @Valid ManagerNameAndEmployeePosition managerNameAndEmployeePosition)
     {
-        return ResponseEntity.ok(trainingRequestService.getEmployeesByPosition(position));
+        return ResponseEntity.ok(trainingRequestService.getEmployeesByPositionAndManagerName(managerNameAndEmployeePosition));
+    }
+
+    @GetMapping("/getAllManagers")
+    public ResponseEntity<?> getAllManagerNames()
+    {
+        ManagerNames managerNames = null;
+        try{
+            managerNames = userService.getManagerNames();
+        }
+        catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+        return ResponseEntity.ok(managerNames);
     }
 
     @GetMapping("/getFeedbacks/{courseId}")

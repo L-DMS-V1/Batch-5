@@ -1,6 +1,6 @@
 package com.LDMSAppBackend.BackendModule.services;
 
-import com.LDMSAppBackend.BackendModule.Dtos.CourseProgressDisplayDto;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.CourseProgressDisplayDto;
 import com.LDMSAppBackend.BackendModule.entites.CourseAssignment;
 import com.LDMSAppBackend.BackendModule.entites.CourseProgress;
 import com.LDMSAppBackend.BackendModule.enums.CourseStatus;

@@ -1,13 +1,14 @@
 package com.LDMSAppBackend.BackendModule.controllers;
 
-import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestDto;
-import com.LDMSAppBackend.BackendModule.Dtos.TrainingRequestResponse;
+import com.LDMSAppBackend.BackendModule.Dtos.RequestDtos.TrainingRequestDto;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.CourseDisplayForManager;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.PositionsDto;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.TrainingRequestResponse;
 import com.LDMSAppBackend.BackendModule.enums.Status;
+import com.LDMSAppBackend.BackendModule.services.CourseService;
 import com.LDMSAppBackend.BackendModule.services.TrainingRequestService;
 import com.LDMSAppBackend.BackendModule.services.UserService;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -23,15 +24,15 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/manager")
 public class ManagerController {
-
     private final TrainingRequestService trainingRequestService;
     private final UserService userService;
-    private static final Logger log = LoggerFactory.getLogger(ManagerController.class);
+    private final CourseService courseService;
 
     @Autowired
-    public ManagerController(TrainingRequestService trainingRequestService,@Qualifier("user-service-normal") UserService userService) {
+    public ManagerController(TrainingRequestService trainingRequestService, @Qualifier("user-service-normal") UserService userService, CourseService courseService) {
         this.trainingRequestService = trainingRequestService;
         this.userService = userService;
+        this.courseService = courseService;
     }
 
     @PostMapping("/createCourseRequest")
@@ -82,11 +83,9 @@ public class ManagerController {
     @GetMapping("/getAllPositions")
     public ResponseEntity<?> getPositions() {
         try {
-            var positions = userService.getAllPositions();
-            log.info("Fetched positions: {}", positions);
+            PositionsDto positions = userService.getAllPositionsOfEmployeesUnderManager();
             return ResponseEntity.ok(positions);
         } catch (Exception e) {
-            log.error("Error fetching positions", e);
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
@@ -110,5 +109,17 @@ public class ManagerController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
         return ResponseEntity.ok(trainingRequestResponses);
+    }
+
+    @GetMapping("/getCreatedCourses")
+    public ResponseEntity<?> getCreatedCourses()
+    {
+        List<CourseDisplayForManager> courses = null;
+        try{
+            courses = courseService.getAllCreatedCoursesForManager();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+        return ResponseEntity.ok(courses);
     }
 }

@@ -4,7 +4,10 @@ import com.LDMSAppBackend.BackendModule.entites.CourseAssignment;
 import com.LDMSAppBackend.BackendModule.entites.CourseProgress;
 import com.LDMSAppBackend.BackendModule.entites.Employee;
 
+import com.LDMSAppBackend.BackendModule.enums.CourseStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,4 +22,6 @@ public interface CourseAssignmentRepository extends JpaRepository<CourseAssignme
 	Optional<CourseAssignment> findByCourse_CourseIdAndEmployee(Long courseId,Employee employee);
 	Optional<CourseAssignment> findByCourse_CourseIdAndEmployee_EmployeeId(Long courseId, Integer employeeId);
 
+    @Query("SELECT COUNT(c) FROM CourseAssignment c WHERE c.courseStatus = :courseStatus")
+    long countByCourseStatus(@Param("courseStatus") CourseStatus courseStatus);
 }

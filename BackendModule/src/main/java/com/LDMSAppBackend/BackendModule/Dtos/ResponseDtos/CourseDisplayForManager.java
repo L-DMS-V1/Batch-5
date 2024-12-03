@@ -1,13 +1,13 @@
-package com.LDMSAppBackend.BackendModule.Dtos;
+package com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class CourseDisplayForAdmin {
+@AllArgsConstructor
+public class CourseDisplayForManager {
     private Long courseId;
 
     private String courseName;
@@ -15,4 +15,8 @@ public class CourseDisplayForAdmin {
     private String keyConcepts;
 
     private String duration;
+
+    private long totalAssignedEmployees;
+
+    private long numberOfEmployeesCompleted;
 }
