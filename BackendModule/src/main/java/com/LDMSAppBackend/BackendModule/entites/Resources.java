@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Table(name = "resources")
 @Data
@@ -27,4 +29,7 @@ public class Resources {
 
     @Column(name = "link")
     private String resourceLink;
+
+    @OneToMany(mappedBy = "resource", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ResourceLinkCompletion> resourceLinkCompletions;
 }

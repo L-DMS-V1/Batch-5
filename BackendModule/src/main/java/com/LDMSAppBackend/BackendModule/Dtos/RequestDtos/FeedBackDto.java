@@ -1,4 +1,4 @@
-package com.LDMSAppBackend.BackendModule.Dtos;
+package com.LDMSAppBackend.BackendModule.Dtos.RequestDtos;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

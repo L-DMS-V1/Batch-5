@@ -11,8 +11,9 @@ public interface EmployeeRepository extends JpaRepository<Employee,Integer> {
 
     Employee findByUser_AccountId(Integer accountId);
 
-    List<Employee> findByPosition(String position);
+    @Query("SELECT DISTINCT e.position FROM Employee e JOIN e.manager m JOIN m.user u WHERE u.userName = :username")
+    List<String> findDistinctPositionsByManagerUsername(String username);
 
-    @Query("SELECT DISTINCT e.position FROM Employee e")
-    List<String> findDistinctPosition();
+    @Query("SELECT e FROM Employee e JOIN e.manager m JOIN m.user u WHERE u.userName = :username AND e.position = :position")
+    List<Employee> findByManagerNameAndEmployeePosition(String username, String position);
 }

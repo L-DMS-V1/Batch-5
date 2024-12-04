@@ -5,6 +5,7 @@ import com.LDMSAppBackend.BackendModule.entites.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -15,8 +16,11 @@ import java.util.function.Function;
 
 @Component
 public class JwtHelper {
-    private final String SECRET = "batch5InfosysSpringboard";
-    private final long EXPIRATION_TIME = 5*60*60*1000; // 5 hours
+    @Value("${SECRET}")
+    private String SECRET;
+
+    @Value("${EXPIRATION_TIME}")
+    private long EXPIRATION_TIME;
 
 
     public String extractUsername(String token) {

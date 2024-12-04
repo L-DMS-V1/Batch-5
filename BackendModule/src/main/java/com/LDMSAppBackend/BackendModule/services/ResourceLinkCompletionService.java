@@ -1,7 +1,7 @@
 package com.LDMSAppBackend.BackendModule.services;
 
 
-import com.LDMSAppBackend.BackendModule.Dtos.ResourceLinksAndStatus;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.ResourceLinksAndStatus;
 import com.LDMSAppBackend.BackendModule.entites.Employee;
 import com.LDMSAppBackend.BackendModule.entites.ResourceLinkCompletion;
 import com.LDMSAppBackend.BackendModule.entites.Resources;
@@ -39,9 +39,8 @@ public class ResourceLinkCompletionService {
         // Update completion status
         resourceLinkCompletion.setCompleted(true);
         resourceLinkCompletionRepository.save(resourceLinkCompletion);
-
         // Update course progress for the corresponding course
-        Long courseId = (Long) resourceLinkCompletion.getResource().getCourse().getCourseId();
+        Long courseId = resourceLinkCompletion.getResource().getCourse().getCourseId();
         return courseProgressService.updateCourseProgress(employee.getEmployeeId(), courseId);
     }
 
@@ -69,6 +68,7 @@ public class ResourceLinkCompletionService {
         ResourceLinkCompletion resourceLinkCompletion = resourceLinkCompletionRepository.findByEmployeeAndResource(employeeId,resourceId).orElseThrow();
         Resources resourceLink = resourceLinkCompletion.getResource();
         resourceLinksAndStatus.setResourceId(resourceLink.getResourceId());
+        resourceLinksAndStatus.setResourceName(resourceLink.getResourceName());
         resourceLinksAndStatus.setResourceLink(resourceLink.getResourceLink());
         resourceLinksAndStatus.setCompleted(resourceLinkCompletion.getCompleted());
         return resourceLinksAndStatus;

@@ -1,7 +1,7 @@
 package com.LDMSAppBackend.BackendModule.services;
 
-import com.LDMSAppBackend.BackendModule.Dtos.FeedBackDto;
-import com.LDMSAppBackend.BackendModule.Dtos.FeedBackViewDto;
+import com.LDMSAppBackend.BackendModule.Dtos.RequestDtos.FeedBackDto;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.FeedBackViewDto;
 import com.LDMSAppBackend.BackendModule.entites.Course;
 import com.LDMSAppBackend.BackendModule.entites.CourseAssignment;
 import com.LDMSAppBackend.BackendModule.entites.Feedback;
@@ -37,7 +37,7 @@ public class FeedBackService {
     public void addFeedback(FeedBackDto feedBackDto, Long courseId, Long assignmentId) throws RuntimeException
     {
         CourseAssignment courseAssignment = courseAssignmentRepository.findById(assignmentId).orElseThrow();
-        if(courseAssignment.getCourseProgress().getPercentage() == 100)
+        if(courseAssignment.getCourseProgress().getPercentage() != 100)
         {
             throw new RuntimeException("You have not yet completed the course. you can submit feedback only on completion of the course");
         }
@@ -48,7 +48,11 @@ public class FeedBackService {
         User user = (User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         feedback.setEmployeeName(user.getUsername());
         feedback.setRating(feedBackDto.getRating());
+
+        System.out.println("feedback created");
         feedBackRepository.save(feedback);
+        System.out.println("feedback saved");
+
     }
 
     public List<FeedBackViewDto> getFeedBacks(Long courseId)

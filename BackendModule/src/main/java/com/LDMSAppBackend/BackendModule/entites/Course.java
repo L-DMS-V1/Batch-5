@@ -2,6 +2,7 @@ package com.LDMSAppBackend.BackendModule.entites;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,4 +39,9 @@ public class Course {
 
     @OneToMany(cascade = CascadeType.ALL,mappedBy = "course")
     private List<Feedback> feedback;
+
+    @JsonBackReference
+    @ManyToOne
+    @JoinColumn(referencedColumnName = "managerId",nullable = false)
+    private Manager manager;
 }

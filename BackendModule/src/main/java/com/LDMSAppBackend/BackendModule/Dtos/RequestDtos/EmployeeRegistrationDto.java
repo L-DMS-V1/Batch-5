@@ -1,4 +1,4 @@
-package com.LDMSAppBackend.BackendModule.Dtos;
+package com.LDMSAppBackend.BackendModule.Dtos.RequestDtos;
 
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
@@ -29,4 +29,7 @@ public class EmployeeRegistrationDto {
 
     @NotEmpty(message = "contact cannot be empty")
     private String contact;
+
+    @NotEmpty(message = "manager must be specified")
+    private String managerName;
 }

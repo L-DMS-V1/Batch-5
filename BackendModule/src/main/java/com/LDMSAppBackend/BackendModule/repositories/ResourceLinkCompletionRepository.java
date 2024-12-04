@@ -10,12 +10,12 @@ import java.util.Optional;
 @Repository
 public interface ResourceLinkCompletionRepository extends JpaRepository<ResourceLinkCompletion, Long> {
     // Method to count total links for a specific course
-    @Query("SELECT COUNT(l) FROM ResourceLinkCompletion l WHERE l.resource.course.courseId = :courseId")
-    Long countTotalLinks(@Param("courseId") Long courseId);
+    @Query("SELECT COUNT(l) FROM ResourceLinkCompletion l WHERE l.resource.course.courseId = :courseId AND l.employee.id = :employeeId")
+    Long countTotalLinksByEmployeeAndCourse(@Param("courseId") Long courseId, @Param("employeeId") Integer employeeId);
 
     // Method to count completed links for a specific course
-    @Query("SELECT COUNT(l) FROM ResourceLinkCompletion l WHERE l.resource.course.courseId = :courseId AND l.completed = true")
-    Long countCompletedLinks(@Param("courseId") Long courseId);
+    @Query("SELECT COUNT(l) FROM ResourceLinkCompletion l WHERE l.resource.course.courseId = :courseId AND l.employee.id = :employeeId AND l.completed = true")
+    Long countCompletedLinksByEmployeeAndCourse(@Param("courseId") Long courseId, @Param("employeeId") Integer employeeId);
 
     @Query("SELECT rlc FROM ResourceLinkCompletion rlc WHERE rlc.employee.employeeId = :employeeId AND rlc.resource.resourceId = :resourceId")
     Optional<ResourceLinkCompletion> findByEmployeeAndResource(@Param("employeeId") Integer employeeId,

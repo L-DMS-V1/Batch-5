@@ -1,4 +1,4 @@
-package com.LDMSAppBackend.BackendModule.Dtos;
+package com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

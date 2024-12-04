@@ -1,6 +1,10 @@
 package com.LDMSAppBackend.BackendModule.controllers;
 
-import com.LDMSAppBackend.BackendModule.Dtos.*;
+import com.LDMSAppBackend.BackendModule.Dtos.RequestDtos.SetPasswordDto;
+import com.LDMSAppBackend.BackendModule.Dtos.RequestDtos.UserLoginRequestDto;
+import com.LDMSAppBackend.BackendModule.Dtos.RequestDtos.UserRegistrationDto;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.LoginResponse;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.UserResponseDto;
 import com.LDMSAppBackend.BackendModule.enums.Role;
 import com.LDMSAppBackend.BackendModule.entites.User;
 import com.LDMSAppBackend.BackendModule.repositories.AdminRepository;
@@ -22,11 +26,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/user")
 public class UserController {
 
-    private UserService userService;
+    private final UserService userService;
 
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    private JwtHelper jwtHelper;
+    private final JwtHelper jwtHelper;
 
     private final ManagerRepository managerRepository;
 
@@ -57,6 +61,10 @@ public class UserController {
             {
                 return ResponseEntity.badRequest().body("employees cannot register directly");
             }
+            if(role.equals(Role.MANAGER))
+            {
+                return ResponseEntity.badRequest().body("managers cannot register directly");
+            }
             userService.addUser(userDto);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Invalid role provided: " + userDto.getRole());
@@ -68,7 +76,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody @Valid UserLoginRequestDto loginRequest,BindingResult bindingResult) {
+    public ResponseEntity<?> login(@RequestBody @Valid UserLoginRequestDto loginRequest, BindingResult bindingResult) {
         if(bindingResult.hasErrors())
         {
             return ResponseEntity.badRequest().body(bindingResult.getFieldErrors());
@@ -91,7 +99,7 @@ public class UserController {
                 id = employeeRepository.findByUser_AccountId(user.getAccountId()).getEmployeeId();
             }
             else {
-                return ResponseEntity.internalServerError().body("please re-login we cannot identify your role");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("please re-login we cannot Identify your role");
             }
             UserResponseDto userDto = new UserResponseDto(id, user.getAccountName(),user.getUsername(),user.getEmail(),user.getRole());
             return ResponseEntity.status(HttpStatus.OK).body(new LoginResponse(token,userDto));
@@ -100,7 +108,7 @@ public class UserController {
     }
 
     @PutMapping("/setPassword")
-    public ResponseEntity<?> setPassword(@RequestBody @Valid SetPasswordDto passwordDto,BindingResult bindingResult)
+    public ResponseEntity<?> setPassword(@RequestBody @Valid SetPasswordDto passwordDto, BindingResult bindingResult)
     {
         if(bindingResult.hasErrors())
         {

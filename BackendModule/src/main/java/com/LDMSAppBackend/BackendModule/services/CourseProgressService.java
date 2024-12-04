@@ -1,13 +1,12 @@
 package com.LDMSAppBackend.BackendModule.services;
 
-import com.LDMSAppBackend.BackendModule.Dtos.CourseProgressDisplayDto;
+import com.LDMSAppBackend.BackendModule.Dtos.ResponseDtos.CourseProgressDisplayDto;
 import com.LDMSAppBackend.BackendModule.entites.CourseAssignment;
 import com.LDMSAppBackend.BackendModule.entites.CourseProgress;
 import com.LDMSAppBackend.BackendModule.enums.CourseStatus;
 import com.LDMSAppBackend.BackendModule.repositories.CourseAssignmentRepository;
 import com.LDMSAppBackend.BackendModule.repositories.CourseProgressRepository;
 import com.LDMSAppBackend.BackendModule.repositories.ResourceLinkCompletionRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,14 +30,13 @@ public class CourseProgressService {
         this.courseAssignmentRepository = courseAssignmentRepository;
     }
 
-    @Transactional
     public String updateCourseProgress(Integer employeeId, Long courseId) {
         // Fetch total links
-        Long totalLinksCount = resourceLinkCompletionRepository.countTotalLinks(courseId);
+        Long totalLinksCount = resourceLinkCompletionRepository.countTotalLinksByEmployeeAndCourse(courseId,employeeId);
         int totalLinks = totalLinksCount != null ? totalLinksCount.intValue() : 0;
 
         // Fetch completed links
-        Long completedLinksCount = resourceLinkCompletionRepository.countCompletedLinks(courseId);
+        Long completedLinksCount = resourceLinkCompletionRepository.countCompletedLinksByEmployeeAndCourse(courseId,employeeId);
         int completedLinks = completedLinksCount != null ? completedLinksCount.intValue() : 0;
 
         // Calculate progress percentage
@@ -63,9 +61,6 @@ public class CourseProgressService {
         }
         return "Great job! you can go to next resource";
     }
-
-
-
 
     public List<CourseProgressDisplayDto> getAllProgress()
     {
