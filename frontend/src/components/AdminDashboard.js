@@ -91,7 +91,7 @@ const AdminDashboard = () => {
         req.status === 'APPROVED' && 
         !validCourses.some(course => course.courseName === req.courseName)
       );
-      setAcceptedRequests(acceptedReqs);
+      setAcceptedRequests(acceptedReqs);  
     } catch (error) {
       console.error('Error fetching data:', error);
       setMessage({ text: 'Error fetching data', type: 'error' });
