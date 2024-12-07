@@ -21,18 +21,12 @@ const Login = () => {
       
       if (response.data && response.data.token) {
         const { token, user } = response.data;
-        console.log('JWT Token:', token);
-        console.log('Decoded Token:', jwtDecode(token));
         
-        // Store token with Bearer prefix
-        const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-        localStorage.setItem('token', authToken);
+        // Store token without Bearer prefix
+        localStorage.setItem('token', token);
         localStorage.setItem('role', user.role);
         localStorage.setItem('userName', user.username);
         localStorage.setItem('userId', user.id);
-        
-        // Set default auth header
-        axiosInstance.defaults.headers.common['Authorization'] = authToken;
 
         // Navigate based on role
         const role = user.role.toLowerCase();

@@ -11,7 +11,7 @@ const Register = () => {
     userName: '',
     password: '',
     email: '',
-    role: 'MANAGER'
+    role: 'ADMIN'
   });
   const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(false);
@@ -242,7 +242,6 @@ const Register = () => {
               required
               disabled={loading}
             >
-              <option value="MANAGER">Manager</option>
               <option value="ADMIN">Admin</option>
             </select>
           </div>

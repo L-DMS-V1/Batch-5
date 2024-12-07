@@ -50,6 +50,9 @@
   margin-top: 10px;
   transition: background-color 0.3s;
 }
+.course-resources-container {
+  margin-top: 100px;  /* Increase this value to push content below navbar */
+}
 
 .go-to-course-button:hover {
   background-color: #0056b3;
@@ -77,6 +80,7 @@
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s;
+  position: absolute;
 }
 
 .back-button:hover {

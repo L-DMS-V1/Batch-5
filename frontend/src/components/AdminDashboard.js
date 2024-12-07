@@ -13,6 +13,8 @@ const AdminDashboard = () => {
   const [courses, setCourses] = useState([]);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [progressStats, setProgressStats] = useState(null);
   const [showAddEmployeeForm, setShowAddEmployeeForm] = useState(false);
   const [employeeForm, setEmployeeForm] = useState({
     accountName: '',
@@ -21,8 +23,11 @@ const AdminDashboard = () => {
     email: '',
     role: 'EMPLOYEE',
     position: '',
-    contact: ''
+    contact: '',
+    managerName: ''
   });
+  const [managers, setManagers] = useState([]);
+  const [isManagerRegistration, setIsManagerRegistration] = useState(false);
   const [showCourseForm, setShowCourseForm] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [courseForm, setCourseForm] = useState({
@@ -56,62 +61,146 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) {
+    const role = localStorage.getItem('role');
+    
+    if (!token || role?.toLowerCase() !== 'admin') {
+      setMessage({ text: 'Please login with admin credentials', type: 'error' });
       navigate('/login');
       return;
     }
+
     fetchInitialData();
+
+    const pollInterval = setInterval(() => {
+      const currentToken = localStorage.getItem('token');
+      const currentRole = localStorage.getItem('role');
+      
+      if (currentToken && currentRole?.toLowerCase() === 'admin') {
+        fetchInitialData();
+      } else {
+        clearInterval(pollInterval);
+      }
+    }, 300000); // Poll every 5 minutes
+
+    return () => clearInterval(pollInterval);
   }, [navigate]);
 
   const fetchInitialData = async () => {
     try {
-      const [requestsRes, coursesRes] = await Promise.all([
+      setLoading(true);
+      const [requestsResponse, coursesResponse] = await Promise.all([
         axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_REQUESTS),
         axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_COURSES)
       ]);
 
-      // Process courses
-      const validCourses = coursesRes.data.filter(course => course !== null);
-      console.log('Valid courses:', validCourses);
-      setCourses(validCourses);
+      if (requestsResponse.data) {
+        setRequests(requestsResponse.data);
+      }
+      
+      if (coursesResponse.data) {
+        setCreatedCourses(coursesResponse.data);
+      }
 
-      // Group requests by ID and get latest status
-      const latestRequests = requestsRes.data.reduce((acc, curr) => {
-        if (!acc[curr.id] || new Date(curr.createdAt) > new Date(acc[curr.id].createdAt)) {
-          acc[curr.id] = curr;
+      try {
+        const progressResponse = await axiosInstance.get(ENDPOINTS.ADMIN_GET_PROGRESSES);
+        if (progressResponse.data) {
+          setProgressStats(progressResponse.data);
         }
-        return acc;
-      }, {});
-
-      const finalRequests = Object.values(latestRequests);
-      setRequests(finalRequests);
-
-      // Filter accepted requests that don't have courses yet
-      const acceptedReqs = finalRequests.filter(req => 
-        req.status === 'APPROVED' && 
-        !validCourses.some(course => course.courseName === req.courseName)
-      );
-      setAcceptedRequests(acceptedReqs);  
+      } catch (error) {
+        console.error('Error fetching progress stats:', error);
+      }
     } catch (error) {
-      console.error('Error fetching data:', error);
-      setMessage({ text: 'Error fetching data', type: 'error' });
+      console.error('Error loading dashboard data:', error);
+      setMessage({ 
+        text: 'Error loading dashboard data. Please refresh the page.', 
+        type: 'error' 
+      });
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        
+        if (!token || role?.toLowerCase() !== 'admin') {
+          setMessage({ text: 'Authentication error. Please check your session.', type: 'error' });
+          return;
+        }
+
+        const response = await axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_MANAGERS);
+        if (response.data && response.data.managerNames) {
+          setManagers(response.data.managerNames);
+        }
+      } catch (error) {
+        console.error('Error fetching managers:', error);
+        setMessage({ 
+          text: error.response?.data?.message || 'Error fetching managers. Please try again.', 
+          type: 'error' 
+        });
+      }
+    };
+    fetchManagers();
+  }, []);
+
+  useEffect(() => {
+    const fetchManagers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('role');
+        
+        if (!token || role?.toLowerCase() !== 'admin') {
+          setMessage({ text: 'Authentication error. Please check your session.', type: 'error' });
+          return;
+        }
+
+        const response = await axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_MANAGERS);
+        if (response.data && response.data.managerNames) {
+          setManagers(response.data.managerNames);
+        }
+      } catch (error) {
+        console.error('Error fetching managers:', error);
+        setMessage({ 
+          text: error.response?.data?.message || 'Error fetching managers. Please try again.', 
+          type: 'error' 
+        });
+      }
+    };
+
+    if (showAddEmployeeForm) {
+      fetchManagers();
+    }
+  }, [showAddEmployeeForm]);
+
   const handleAddEmployee = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axiosInstance.post(
-        ENDPOINTS.ADMIN_ADD_EMPLOYEE,
-        employeeForm,
+      const endpoint = isManagerRegistration ? 
+        ENDPOINTS.ADMIN_ADD_MANAGER : 
+        ENDPOINTS.ADMIN_ADD_EMPLOYEE;
+      
+      const formData = isManagerRegistration ? 
         {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }
-      );
-      setMessage({ text: 'Employee added successfully', type: 'success' });
+          accountName: employeeForm.accountName,
+          userName: employeeForm.userName,
+          password: employeeForm.password,
+          email: employeeForm.email,
+          role: 'MANAGER'
+        } : 
+        {
+          ...employeeForm,
+          role: 'EMPLOYEE'
+        };
+
+      await axiosInstance.post(endpoint, formData);
+      
+      setMessage({ 
+        text: `${isManagerRegistration ? 'Manager' : 'Employee'} added successfully`, 
+        type: 'success' 
+      });
       setShowAddEmployeeForm(false);
       setEmployeeForm({
         accountName: '',
@@ -120,21 +209,44 @@ const AdminDashboard = () => {
         email: '',
         role: 'EMPLOYEE',
         position: '',
-        contact: ''
+        contact: '',
+        managerName: ''
       });
+      
+      // Refresh managers list if we just added a new manager
+      if (isManagerRegistration) {
+        const response = await axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_MANAGERS);
+        setManagers(response.data.managerNames || []);
+      }
     } catch (error) {
-      console.error('Error adding employee:', error);
-      setMessage({ text: error.response?.data?.message || 'Error adding employee', type: 'error' });
+      console.error(`Error adding ${isManagerRegistration ? 'manager' : 'employee'}:`, error);
+      setMessage({ 
+        text: error.response?.data?.message || `Error adding ${isManagerRegistration ? 'manager' : 'employee'}`, 
+        type: 'error' 
+      });
     }
   };
 
   const handleAcceptRequest = async (id) => {
     try {
+      // Verify token and role
       const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      
+      if (!token || role?.toLowerCase() !== 'admin') {
+        setMessage({ text: 'Authentication error. Please check your session.', type: 'error' });
+        return;
+      }
+
       await axiosInstance.put(
         ENDPOINTS.ADMIN_ACCEPT_REQUEST(id),
         {},
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
       
       setMessage({ text: 'Request accepted successfully', type: 'success' });
@@ -146,19 +258,23 @@ const AdminDashboard = () => {
       // Find the accepted request and show course creation form
       const acceptedRequest = requests.find(req => req.id === id);
       if (acceptedRequest) {
+        setSelectedRequest(acceptedRequest);
         setCourseForm({
-          courseName: acceptedRequest.courseName || '',
-          keyConcepts: acceptedRequest.concepts || '',
-          duration: acceptedRequest.duration || '',
+          courseId: '',
+          courseName: '',
+          keyConcepts: '',
+          duration: '',
           resources: [{ resourceName: '', resourceLink: '' }],
           outcomes: ''
         });
-        setSelectedRequest(acceptedRequest);
         setShowCourseForm(true);
       }
     } catch (error) {
       console.error('Error accepting request:', error);
-      setMessage({ text: 'Error accepting request', type: 'error' });
+      setMessage({ 
+        text: error.response?.data?.message || 'Error accepting request. Please try again.', 
+        type: 'error' 
+      });
     }
   };
 
@@ -274,9 +390,10 @@ const AdminDashboard = () => {
         duration: courseForm.duration.trim(),
         outcomes: courseForm.outcomes.trim(),
         resources: validResources.map(resource => ({
-          resourceNames: resource.resourceName.trim(),
-          resourceLinks: resource.resourceLink.trim()
-        }))
+          resourceLinks: resource.resourceLink.trim(),
+          resourceNames: resource.resourceName.trim()
+        })),
+        managerName: selectedRequest?.managerName || localStorage.getItem('userName')
       };
 
       console.log('Submitting transformed course form:', transformedCourseForm);
@@ -335,43 +452,155 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchEmployeesByPosition = async (position) => {
+  const handleAssignFromCreatedCourses = async (course) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axiosInstance.get(
-        ENDPOINTS.ADMIN_GET_EMPLOYEES_BY_POSITION(position),
-        { headers: { 'Authorization': `Bearer ${token}` } }
+      const role = localStorage.getItem('role');
+      
+      if (!token || role?.toLowerCase() !== 'admin') {
+        setMessage({ text: 'Authentication error. Please check your session.', type: 'error' });
+        return;
+      }
+
+      if (!course?.courseId) {
+        setMessage({ text: 'Invalid course selection', type: 'error' });
+        return;
+      }
+
+      setLoading(true);
+      console.log('Getting course details for:', course.courseId);
+
+      // First get the course details
+      const courseResponse = await axiosInstance.get(
+        ENDPOINTS.ADMIN_GET_COURSE(course.courseId)
       );
-      setEmployees(response.data);
+      
+      console.log('Course details received:', courseResponse?.data);
+      
+      if (!courseResponse?.data) {
+        throw new Error('Failed to fetch course details');
+      }
+
+      const courseDetails = courseResponse.data;
+      
+      // Get manager name from course details or local storage
+      const managerName = courseDetails.managerName || localStorage.getItem('userName');
+
+      // Get all training requests to find the one matching this course
+      const requestsResponse = await axiosInstance.get(ENDPOINTS.ADMIN_GET_ALL_REQUESTS);
+      const matchingRequest = requestsResponse.data.find(req => 
+        req.courseName === courseDetails.courseName && 
+        req.status === 'APPROVED'
+      );
+
+      if (!matchingRequest) {
+        setMessage({ text: 'Could not find the original training request', type: 'error' });
+        return;
+      }
+
+      const position = matchingRequest.employeePosition;
+      const requiredEmployeeCount = parseInt(matchingRequest.requiredEmployees) || 0;
+      
+      console.log('Found matching request with position:', position, 'required employees:', requiredEmployeeCount);
+
+      if (!position) {
+        setMessage({ text: 'Position not found in training request', type: 'error' });
+        return;
+      }
+
+      console.log('Fetching employees for manager:', managerName, 'position:', position);
+
+      // Get employees under the manager for the specific position
+      const employeesResponse = await axiosInstance.post(
+        ENDPOINTS.ADMIN_GET_EMPLOYEES_BY_POSITION,
+        {
+          managerName,
+          position
+        }
+      );
+
+      console.log('Employees response:', employeesResponse?.data);
+
+      if (!employeesResponse?.data) {
+        throw new Error('Failed to fetch employees');
+      }
+
+      // Set the employees for dropdown
+      setEmployees(employeesResponse.data);
+      
+      // Set the selected course info with required employee count
+      setSelectedRequest({
+        managerName: managerName,
+        employeePosition: position,
+        id: course.courseId,
+        requiredEmployeeCount: requiredEmployeeCount
+      });
+
+      // Reset the assignment form
+      setAssignCourseForm({
+        courseId: course.courseId,
+        deadline: '',
+        employeeIds: []
+      });
+
+      console.log('Showing assign form');
+      // Show the assignment form
+      setShowAssignForm(true);
+      
     } catch (error) {
-      console.error('Error fetching employees:', error);
-      setMessage({ text: 'Error fetching employees', type: 'error' });
+      console.error('Error preparing course assignment:', error);
+      if (error.response?.status === 401) {
+        setMessage({ 
+          text: 'Your session has expired. Please log in again.',
+          type: 'error' 
+        });
+      } else {
+        setMessage({ 
+          text: error.response?.data?.message || 'Error preparing course assignment. Please try again.',
+          type: 'error' 
+        });
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchAcceptedRequests = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axiosInstance.get(
-        ENDPOINTS.ADMIN_GET_ALL_REQUESTS,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-      // Filter for accepted requests that don't have courses created yet
-      const accepted = response.data.filter(req => req.status === 'APPROVED');
-      setAcceptedRequests(accepted);
-    } catch (error) {
-      console.error('Error fetching accepted requests:', error);
-      setMessage({ text: 'Error fetching accepted requests', type: 'error' });
+  const handleEmployeeSelection = (selectedIds) => {
+    const requiredCount = selectedRequest?.requiredEmployeeCount || 0;
+    
+    // If trying to select more than required
+    if (selectedIds.length > requiredCount) {
+      setMessage({ 
+        text: `You can only select up to ${requiredCount} employee${requiredCount !== 1 ? 's' : ''}`, 
+        type: 'warning' 
+      });
+      return;
     }
+
+    setAssignCourseForm(prev => ({
+      ...prev,
+      employeeIds: selectedIds
+    }));
   };
 
   const handleAssignCourse = async (e) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      
+      if (!token || role?.toLowerCase() !== 'admin') {
+        setMessage({ text: 'Authentication error. Please check your session.', type: 'error' });
+        return;
+      }
       
       if (!assignCourseForm.courseId) {
         setMessage({ text: 'Course ID is missing', type: 'error' });
+        return;
+      }
+
+      if (!assignCourseForm.deadline) {
+        setMessage({ text: 'Please set a deadline', type: 'error' });
         return;
       }
 
@@ -388,130 +617,61 @@ const AdminDashboard = () => {
       await axiosInstance.post(
         ENDPOINTS.ADMIN_ASSIGN_COURSE,
         assignmentPayload,
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
 
       setMessage({ text: 'Course assigned successfully', type: 'success' });
       setShowAssignForm(false);
       setSelectedRequest(null);
-      await fetchInitialData();
-    } catch (error) {
-      console.error('Error assigning course:', error);
-      const errorMessage = error.response?.data?.message || 'Error assigning course';
-      setMessage({ text: errorMessage, type: 'error' });
-    }
-  };
-
-  const handleAssignExistingCourse = (course) => {
-    // Fetch employees for the selected position first
-    const fetchEmployeesForAssignment = async (position) => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axiosInstance.get(
-          ENDPOINTS.ADMIN_GET_EMPLOYEES_BY_POSITION(position),
-          { headers: { 'Authorization': `Bearer ${token}` } }
-        );
-        setEmployees(response.data);
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-        setMessage({ text: 'Error fetching employees', type: 'error' });
-      }
-    };
-
-    setSelectedRequest({
-      employeePosition: '',
-      requiredEmployees: 0
-    });
-    setAssignCourseForm({
-      courseId: course.courseId,
-      deadline: '',
-      employeeIds: []
-    });
-    setShowCreatedCourses(false);
-  };
-
-  const handleAssignFromCreatedCourse = async (course) => {
-    try {
-      setSelectedRequest({
-        employeePosition: course.employeePosition,
-        requiredEmployees: course.requiredEmployees
-      });
-      
       setAssignCourseForm({
-        courseId: course.courseId,
+        courseId: '',
         deadline: '',
         employeeIds: []
       });
-
-      // Fetch employees based on position
-      if (course.employeePosition) {
-        await fetchEmployeesByPosition(course.employeePosition);
-      }
-
-      setShowAssignForm(true);
+      await fetchInitialData();
     } catch (error) {
-      console.error('Error preparing course assignment:', error);
-      setMessage({ text: 'Error preparing course assignment', type: 'error' });
+      console.error('Error assigning course:', error);
+      setMessage({ 
+        text: error.response?.data?.message || 'Error assigning course. Please try again.', 
+        type: 'error' 
+      });
     }
   };
 
-  const handleAssignFromCreatedCourses = async (course) => {
+  const fetchAcceptedRequests = async () => {
     try {
-      // Fetch the original training request details for this course
       const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      
+      if (!token || role?.toLowerCase() !== 'admin') {
+        setMessage({ text: 'Authentication error. Please check your session.', type: 'error' });
+        return;
+      }
+
       const response = await axiosInstance.get(
         ENDPOINTS.ADMIN_GET_ALL_REQUESTS,
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
       
-      // Find the original request that matches this course
-      const originalRequest = response.data.find(
-        req => req.courseName === course.courseName && req.status === 'APPROVED'
-      );
-
-      if (originalRequest) {
-        // Set the selected request with original details
-        setSelectedRequest({
-          ...originalRequest,
-          employeePosition: originalRequest.employeePosition,
-          requiredEmployees: originalRequest.requiredEmployees
-        });
-
-        // Set up the assignment form
-        setAssignCourseForm({
-          courseId: course.courseId,
-          deadline: '',
-          employeeIds: []
-        });
-
-        // Fetch employees for the position
-        if (originalRequest.employeePosition) {
-          await fetchEmployeesByPosition(originalRequest.employeePosition);
-        }
-
-        setShowAssignForm(true);
-        setShowCreatedCourses(false); // Hide the created courses view
-      } else {
-        setMessage({ text: 'Could not find original request details', type: 'error' });
-      }
+      // Filter for accepted requests that don't have courses created yet
+      const accepted = response.data.filter(req => req.status === 'APPROVED');
+      setAcceptedRequests(accepted);
     } catch (error) {
-      console.error('Error preparing course assignment:', error);
-      setMessage({ text: 'Error preparing course assignment', type: 'error' });
-    }
-  };
-
-  const handleDeleteCourse = async (courseId) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axiosInstance.delete(
-        ENDPOINTS.ADMIN_DELETE_COURSE(courseId),
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-      setMessage({ text: 'Course deleted successfully', type: 'success' });
-      fetchInitialData(); // Refresh the data
-    } catch (error) {
-      console.error('Error deleting course:', error);
-      setMessage({ text: error.response?.data?.message || 'Error deleting course', type: 'error' });
+      console.error('Error fetching accepted requests:', error);
+      setMessage({ 
+        text: error.response?.data?.message || 'Error fetching accepted requests. Please try again.', 
+        type: 'error' 
+      });
     }
   };
 
@@ -716,6 +876,101 @@ const AdminDashboard = () => {
     navigate('/login');
   };
 
+  const handleDeleteCourse = async (courseId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      
+      if (!token || role?.toLowerCase() !== 'admin') {
+        setMessage({ text: 'Authentication error. Please check your session.', type: 'error' });
+        return;
+      }
+
+      if (!courseId) {
+        setMessage({ text: 'Course ID is missing', type: 'error' });
+        return;
+      }
+
+      await axiosInstance.delete(
+        ENDPOINTS.ADMIN_DELETE_COURSE(courseId),
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
+      );
+
+      setMessage({ text: 'Course deleted successfully', type: 'success' });
+      // Reset any related state
+      setSelectedCourseForUpdate(null);
+      setShowCourseForm(false);
+      // Refresh the course list
+      await fetchInitialData();
+    } catch (error) {
+      console.error('Error deleting course:', error);
+      setMessage({ 
+        text: error.response?.data?.message || 'Error deleting course. Please try again.', 
+        type: 'error' 
+      });
+    }
+  };
+
+  const fetchEmployeesByPosition = async (position) => {
+    try {
+      // Verify token and role
+      const token = localStorage.getItem('token');
+      const role = localStorage.getItem('role');
+      
+      if (!token || role?.toLowerCase() !== 'admin') {
+        setMessage({ text: 'Authentication error. Please check your session.', type: 'error' });
+        return;
+      }
+
+      // Check required data
+      if (!selectedRequest?.managerName) {
+        setMessage({ text: 'Manager information is missing', type: 'error' });
+        return;
+      }
+
+      console.log('Fetching employees with:', {
+        managerName: selectedRequest.managerName,
+        position: position
+      });
+
+      // Explicitly set the Authorization header
+      const response = await axiosInstance.post(
+        ENDPOINTS.ADMIN_GET_EMPLOYEES_BY_POSITION,
+        {
+          managerName: selectedRequest.managerName,
+          position: position
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (response.data) {
+        console.log('Employees fetched:', response.data);
+        setEmployees(response.data);
+      } else {
+        console.log('No employees found');
+        setMessage({ text: 'No employees found for the selected position', type: 'warning' });
+        setEmployees([]);
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      setMessage({ 
+        text: error.response?.data?.message || 'Error fetching employees. Please try again.', 
+        type: 'error' 
+      });
+      setEmployees([]);
+    }
+  };
+
   const FeedbackModal = () => {
     if (!showFeedbackModal) return null;
 
@@ -876,7 +1131,7 @@ const AdminDashboard = () => {
         {showAddEmployeeForm && (
           <div className="modal">
             <div className="modal-content">
-              <h2>Add New Employee</h2>
+              <h2>Add New {isManagerRegistration ? 'Manager' : 'Employee'}</h2>
               <form onSubmit={handleAddEmployee} className="form">
                 <div className="form-group">
                   <input
@@ -915,29 +1170,89 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <input
-                    type="text"
-                    placeholder="Position"
-                    value={employeeForm.position}
-                    onChange={(e) => setEmployeeForm({...employeeForm, position: e.target.value})}
-                    required
-                  />
+                  <label>Registration Type</label>
+                  <select
+                    className="form-control"
+                    value={isManagerRegistration ? 'MANAGER' : 'EMPLOYEE'}
+                    onChange={(e) => {
+                      const isManager = e.target.value === 'MANAGER';
+                      setIsManagerRegistration(isManager);
+                      setEmployeeForm(prev => ({
+                        ...prev,
+                        role: e.target.value,
+                        position: isManager ? '' : prev.position,
+                        contact: isManager ? '' : prev.contact,
+                        managerName: isManager ? '' : prev.managerName
+                      }));
+                    }}
+                  >
+                    <option value="EMPLOYEE">Employee</option>
+                    <option value="MANAGER">Manager</option>
+                  </select>
                 </div>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    placeholder="Contact"
-                    value={employeeForm.contact}
-                    onChange={(e) => setEmployeeForm({...employeeForm, contact: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="form-buttons">
-                  <button type="submit" className="submit-button">Add Employee</button>
+
+                {!isManagerRegistration && (
+                  <>
+                    <div className="form-group">
+                      <label>Position</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Enter position"
+                        value={employeeForm.position}
+                        onChange={(e) => setEmployeeForm({...employeeForm, position: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Contact</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Enter contact"
+                        value={employeeForm.contact}
+                        onChange={(e) => setEmployeeForm({...employeeForm, contact: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Manager</label>
+                      <select
+                        className="form-control"
+                        value={employeeForm.managerName}
+                        onChange={(e) => setEmployeeForm({...employeeForm, managerName: e.target.value})}
+                        required
+                      >
+                        <option value="">Select Manager</option>
+                        {managers.map((manager, index) => (
+                          <option key={index} value={manager}>{manager}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+                
+                <div className="modal-buttons">
+                  <button type="submit" className="btn-primary">
+                    Add {isManagerRegistration ? 'Manager' : 'Employee'}
+                  </button>
                   <button 
                     type="button" 
-                    className="cancel-button"
-                    onClick={() => setShowAddEmployeeForm(false)}
+                    className="btn-secondary"
+                    onClick={() => {
+                      setShowAddEmployeeForm(false);
+                      setEmployeeForm({
+                        accountName: '',
+                        userName: '',
+                        password: '',
+                        email: '',
+                        role: 'EMPLOYEE',
+                        position: '',
+                        contact: '',
+                        managerName: ''
+                      });
+                      setIsManagerRegistration(false);
+                    }}
                   >
                     Cancel
                   </button>
@@ -986,6 +1301,32 @@ const AdminDashboard = () => {
 
         <div className="requests-list-container">
           <h2>Training Requests</h2>
+          <div className="status-filter-container">
+            <button 
+              className={`filter-btn ${statusFilter === 'ALL' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('ALL')}
+            >
+              All Requests
+            </button>
+            <button 
+              className={`filter-btn ${statusFilter === 'PENDING' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('PENDING')}
+            >
+              Pending
+            </button>
+            <button 
+              className={`filter-btn ${statusFilter === 'APPROVED' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('APPROVED')}
+            >
+              Approved
+            </button>
+            <button 
+              className={`filter-btn ${statusFilter === 'REJECTED' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('REJECTED')}
+            >
+              Rejected
+            </button>
+          </div>
           <div className="requests-table">
             <table>
               <thead>
@@ -1051,6 +1392,120 @@ const AdminDashboard = () => {
             </table>
           </div>
         </div>
+
+        {showAssignForm && (
+          <div className="modal">
+            <div className="modal-content">
+              <h2>Assign Course</h2>
+              <form onSubmit={handleAssignCourse} className="form">
+                <div className="form-group">
+                  <label>Deadline</label>
+                  <input
+                    type="date"
+                    value={assignCourseForm.deadline}
+                    onChange={(e) => setAssignCourseForm({
+                      ...assignCourseForm,
+                      deadline: e.target.value
+                    })}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Select Employees {selectedRequest.requiredEmployeeCount > 0 && `(Required: ${selectedRequest.requiredEmployeeCount})`}</label>
+                  <select 
+                    className="employee-select"
+                    value=""
+                    onChange={(e) => {
+                      const employeeId = parseInt(e.target.value);
+                      if (employeeId) {
+                        if (assignCourseForm.employeeIds.length >= selectedRequest.requiredEmployeeCount) {
+                          setMessage({ 
+                            text: `You can only select up to ${selectedRequest.requiredEmployeeCount} employee${selectedRequest.requiredEmployeeCount !== 1 ? 's' : ''}`, 
+                            type: 'warning' 
+                          });
+                          return;
+                        }
+                        const newEmployeeIds = [...assignCourseForm.employeeIds, employeeId];
+                        setAssignCourseForm({
+                          ...assignCourseForm,
+                          employeeIds: newEmployeeIds
+                        });
+                      }
+                    }}
+                  >
+                    <option value="">Select an employee</option>
+                    {employees.map(employee => (
+                      <option 
+                        key={employee.employeeId} 
+                        value={employee.employeeId}
+                        disabled={assignCourseForm.employeeIds.includes(employee.employeeId)}
+                      >
+                        {employee.userName} - {employee.position}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="selected-employees">
+                    <label>Selected Employees ({assignCourseForm.employeeIds.length} / {selectedRequest.requiredEmployeeCount})</label>
+                    <div className="employees-list">
+                      {assignCourseForm.employeeIds.map(id => {
+                        const employee = employees.find(e => e.employeeId === id);
+                        return (
+                          <div key={id} className="selected-employee">
+                            <span>{employee?.userName} - {employee?.position}</span>
+                            <button 
+                              type="button"
+                              className="remove-employee-btn"
+                              onClick={() => {
+                                const newEmployeeIds = assignCourseForm.employeeIds.filter(eId => eId !== id);
+                                setAssignCourseForm({
+                                  ...assignCourseForm,
+                                  employeeIds: newEmployeeIds
+                                });
+                              }}
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                <div className="form-buttons">
+                  <button 
+                    type="submit" 
+                    className="submit-button"
+                    disabled={
+                      !assignCourseForm.deadline || 
+                      !assignCourseForm.employeeIds.length ||
+                      (selectedRequest.requiredEmployeeCount > 0 && 
+                       assignCourseForm.employeeIds.length !== selectedRequest.requiredEmployeeCount)
+                    }
+                  >
+                    Assign Course
+                  </button>
+                  <button 
+                    type="button" 
+                    className="cancel-button"
+                    onClick={() => {
+                      setShowAssignForm(false);
+                      setSelectedRequest(null);
+                      setAssignCourseForm({
+                        courseId: '',
+                        deadline: '',
+                        employeeIds: []
+                      });
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {showCourseForm && (
           <div className="modal">
@@ -1148,276 +1603,6 @@ const AdminDashboard = () => {
                         outcomes: ''
                       });
                     }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {selectedRequest && !showCourseForm && (
-          <div className="modal">
-            <div className="modal-content">
-              <h2>Assign Course</h2>
-              <form onSubmit={handleAssignCourse} className="form">
-                <div className="form-group">
-                  <label>Deadline</label>
-                  <input
-                    type="date"
-                    value={assignCourseForm.deadline}
-                    onChange={(e) => setAssignCourseForm({
-                      ...assignCourseForm,
-                      deadline: e.target.value
-                    })}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                  />
-                </div>
-                {!selectedRequest.employeePosition && (
-                  <div className="form-group">
-                    <label>Position</label>
-                    <input
-                      type="text"
-                      value={selectedRequest.employeePosition}
-                      onChange={(e) => {
-                        const position = e.target.value;
-                        setSelectedRequest({
-                          ...selectedRequest,
-                          employeePosition: position
-                        });
-                        // Fetch employees when position changes
-                        if (position) {
-                          // fetchEmployeesForAssignment(position);
-                        }
-                      }}
-                      required
-                    />
-                  </div>
-                )}
-                {!selectedRequest.requiredEmployees && (
-                  <div className="form-group">
-                    <label>Number of Employees Required</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={selectedRequest.requiredEmployees}
-                      onChange={(e) => setSelectedRequest({
-                        ...selectedRequest,
-                        requiredEmployees: parseInt(e.target.value) || 0
-                      })}
-                      required
-                    />
-                  </div>
-                )}
-                <div className="form-group">
-                  <label>Select Employees {selectedRequest.requiredEmployees > 0 && `(Required: ${selectedRequest.requiredEmployees})`}</label>
-                  <select 
-                    className="employee-select"
-                    value=""
-                    onChange={(e) => {
-                      const employeeId = parseInt(e.target.value);
-                      if (employeeId) {
-                        const newEmployeeIds = [...assignCourseForm.employeeIds, employeeId];
-                        setAssignCourseForm({
-                          ...assignCourseForm,
-                          employeeIds: newEmployeeIds
-                        });
-                      }
-                    }}
-                  >
-                    <option value="">Select an employee</option>
-                    {employees.map(employee => (
-                      <option 
-                        key={employee.employeeId} 
-                        value={employee.employeeId}
-                        disabled={assignCourseForm.employeeIds.includes(employee.employeeId)}
-                      >
-                        {employee.userName} - {employee.position}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="selected-employees">
-                    <label>Selected Employees ({assignCourseForm.employeeIds.length} / {selectedRequest.requiredEmployees})</label>
-                    <div className="employees-list">
-                      {assignCourseForm.employeeIds.map(id => {
-                        const employee = employees.find(e => e.employeeId === id);
-                        return (
-                          <div key={id} className="selected-employee">
-                            <span>{employee?.userName} - {employee?.position}</span>
-                            <button 
-                              type="button"
-                              className="remove-employee-btn"
-                              onClick={() => {
-                                const newEmployeeIds = assignCourseForm.employeeIds.filter(eId => eId !== id);
-                                setAssignCourseForm({
-                                  ...assignCourseForm,
-                                  employeeIds: newEmployeeIds
-                                });
-                              }}
-                            >
-                              <i className="fas fa-times"></i>
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-                <div className="form-buttons">
-                  <button 
-                    type="submit" 
-                    className="submit-button"
-                    disabled={
-                      !assignCourseForm.deadline || 
-                      !assignCourseForm.employeeIds.length ||
-                      (selectedRequest.requiredEmployees > 0 && 
-                       assignCourseForm.employeeIds.length !== selectedRequest.requiredEmployees)
-                    }
-                  >
-                    Assign Course
-                  </button>
-                  <button 
-                    type="button" 
-                    className="cancel-button"
-                    onClick={() => setSelectedRequest(null)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {showAssignForm && (
-          <div className="modal">
-            <div className="modal-content">
-              <h2>Assign Course</h2>
-              <form onSubmit={handleAssignCourse} className="form">
-                <div className="form-group">
-                  <label>Deadline</label>
-                  <input
-                    type="date"
-                    value={assignCourseForm.deadline}
-                    onChange={(e) => setAssignCourseForm({
-                      ...assignCourseForm,
-                      deadline: e.target.value
-                    })}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                  />
-                </div>
-                {!selectedRequest.employeePosition && (
-                  <div className="form-group">
-                    <label>Position</label>
-                    <input
-                      type="text"
-                      value={selectedRequest.employeePosition}
-                      onChange={(e) => {
-                        const position = e.target.value;
-                        setSelectedRequest({
-                          ...selectedRequest,
-                          employeePosition: position
-                        });
-                        // Fetch employees when position changes
-                        if (position) {
-                          // fetchEmployeesForAssignment(position);
-                        }
-                      }}
-                      required
-                    />
-                  </div>
-                )}
-                {!selectedRequest.requiredEmployees && (
-                  <div className="form-group">
-                    <label>Number of Employees Required</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={selectedRequest.requiredEmployees}
-                      onChange={(e) => setSelectedRequest({
-                        ...selectedRequest,
-                        requiredEmployees: parseInt(e.target.value) || 0
-                      })}
-                      required
-                    />
-                  </div>
-                )}
-                <div className="form-group">
-                  <label>Select Employees {selectedRequest.requiredEmployees > 0 && `(Required: ${selectedRequest.requiredEmployees})`}</label>
-                  <select 
-                    className="employee-select"
-                    value=""
-                    onChange={(e) => {
-                      const employeeId = parseInt(e.target.value);
-                      if (employeeId) {
-                        const newEmployeeIds = [...assignCourseForm.employeeIds, employeeId];
-                        setAssignCourseForm({
-                          ...assignCourseForm,
-                          employeeIds: newEmployeeIds
-                        });
-                      }
-                    }}
-                  >
-                    <option value="">Select an employee</option>
-                    {employees.map(employee => (
-                      <option 
-                        key={employee.employeeId} 
-                        value={employee.employeeId}
-                        disabled={assignCourseForm.employeeIds.includes(employee.employeeId)}
-                      >
-                        {employee.userName} - {employee.position}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="selected-employees">
-                    <label>Selected Employees ({assignCourseForm.employeeIds.length} / {selectedRequest.requiredEmployees})</label>
-                    <div className="employees-list">
-                      {assignCourseForm.employeeIds.map(id => {
-                        const employee = employees.find(e => e.employeeId === id);
-                        return (
-                          <div key={id} className="selected-employee">
-                            <span>{employee?.userName} - {employee?.position}</span>
-                            <button 
-                              type="button"
-                              className="remove-employee-btn"
-                              onClick={() => {
-                                const newEmployeeIds = assignCourseForm.employeeIds.filter(eId => eId !== id);
-                                setAssignCourseForm({
-                                  ...assignCourseForm,
-                                  employeeIds: newEmployeeIds
-                                });
-                              }}
-                            >
-                              <i className="fas fa-times"></i>
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-                <div className="form-buttons">
-                  <button 
-                    type="submit" 
-                    className="submit-button"
-                    disabled={
-                      !assignCourseForm.deadline || 
-                      !assignCourseForm.employeeIds.length ||
-                      (selectedRequest.requiredEmployees > 0 && 
-                       assignCourseForm.employeeIds.length !== selectedRequest.requiredEmployees)
-                    }
-                  >
-                    Assign Course
-                  </button>
-                  <button 
-                    type="button" 
-                    className="cancel-button"
-                    onClick={() => setShowAssignForm(false)}
                   >
                     Cancel
                   </button>

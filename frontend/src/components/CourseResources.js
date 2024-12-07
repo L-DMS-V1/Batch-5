@@ -11,12 +11,43 @@ const CourseResources = ({ courseId, onBack, onResourceComplete }) => {
   const [showFeedback, setShowFeedback] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [selectedVideo, setSelectedVideo] = useState(null);
   const navigate = useNavigate();
 
   const calculateCompletionPercentage = (resources) => {
     if (!resources || resources.length === 0) return 0;
     const completedCount = resources.filter(r => r.completed).length;
     return Math.round((completedCount / resources.length) * 100);
+  };
+
+  // Helper function to extract YouTube video ID
+  const getYoutubeVideoId = (url) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  // Check if URL is a video link
+  const isVideoUrl = (url) => {
+    return url.includes('youtube.com') || url.includes('youtu.be');
+  };
+
+  // Handle resource click
+  const handleResourceClick = (resource, e) => {
+    e.preventDefault();
+    if (isVideoUrl(resource.resourceLink)) {
+      const videoId = getYoutubeVideoId(resource.resourceLink);
+      if (videoId) {
+        setSelectedVideo({
+          id: videoId,
+          name: resource.resourceName
+        });
+      } else {
+        window.open(resource.resourceLink, '_blank');
+      }
+    } else {
+      window.open(resource.resourceLink, '_blank');
+    }
   };
 
   useEffect(() => {
@@ -220,8 +251,7 @@ const CourseResources = ({ courseId, onBack, onResourceComplete }) => {
             <div className="resource-info">
               <a 
                 href={resource.resourceLink} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+                onClick={(e) => handleResourceClick(resource, e)}
                 className="resource-link"
               >
                 <span className="resource-title">{resource.resourceName || `Resource ${index + 1}`}</span>
@@ -240,6 +270,26 @@ const CourseResources = ({ courseId, onBack, onResourceComplete }) => {
             </div>
           </div>
         ))}
+
+        {selectedVideo && (
+          <div className="video-player-container">
+            <div className="video-player-header">
+              <h3>{selectedVideo.name}</h3>
+              <button className="close-video" onClick={() => setSelectedVideo(null)}>×</button>
+            </div>
+            <div className="video-player">
+              <iframe
+                width="100%"
+                height="480"
+                src={`https://www.youtube.com/embed/${selectedVideo.id}`}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title={selectedVideo.name}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {showFeedback && (

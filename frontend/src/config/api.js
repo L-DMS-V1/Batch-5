@@ -16,43 +16,63 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Add Bearer prefix if not present
-      config.headers.Authorization = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
-      console.log('Request config:', {
-        url: config.url,
-        method: config.method,
-        headers: config.headers
-      });
-    } else {
-      console.warn('No token found in localStorage');
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => {
-    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
+// Retry logic helper
+const retryRequest = async (error, maxRetries = 2, delay = 1000) => {
+  const config = error.config;
+  
+  // Only retry on 500 errors and if we haven't exceeded max retries
+  if (!config || !error.response || error.response.status !== 500 || 
+      config.__retryCount >= maxRetries) {
+    return Promise.reject(error);
+  }
+
+  // Increment retry count
+  config.__retryCount = config.__retryCount || 0;
+  config.__retryCount++;
+
+  // Wait before retrying
+  await new Promise(resolve => setTimeout(resolve, delay));
+  
+  // Create new promise for retry
+  return axiosInstance(config);
+};
+
 // Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
-    console.log('Response:', {
-      url: response.config.url,
-      status: response.status,
-      data: response.data
-    });
     return response;
   },
-  (error) => {
-    if (error.response?.status === 401) {
-      console.error('Authentication error:', {
-        url: error.config.url,
-        headers: error.config.headers,
-        response: error.response.data
-      });
-      
+  async (error) => {
+    // Log error details for debugging
+    console.error('API Error:', {
+      endpoint: error.config?.url,
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message
+    });
+
+    // Try to retry 500 errors
+    if (error.response?.status === 500) {
+      try {
+        return await retryRequest(error);
+      } catch (retryError) {
+        console.error('All retry attempts failed:', {
+          endpoint: error.config?.url,
+          status: error.response?.status,
+          message: error.response?.data?.message || error.message
+        });
+        return Promise.reject(retryError);
+      }
     }
+    
     return Promise.reject(error);
   }
 );
@@ -76,23 +96,25 @@ export const ENDPOINTS = {
   MANAGER_GET_REQUESTS: '/api/manager/getCourseRequests',
   MANAGER_GET_REQUEST_BY_ID: (id) => `/api/manager/getCourseRequest/${id}`,
   MANAGER_GET_POSITIONS: '/api/manager/getAllPositions',
+  MANAGER_GET_CREATED_COURSES: '/api/manager/getCreatedCourses',
 
   // Admin endpoints 
   ADMIN_ADD_EMPLOYEE: '/api/admin/addEmployee',
+  ADMIN_ADD_MANAGER: '/api/admin/addManager',
   ADMIN_ACCEPT_REQUEST: (id) => `/api/admin/acceptRequest/${id}`,
   ADMIN_REJECT_REQUEST: (id) => `/api/admin/rejectRequest/${id}`,
   ADMIN_GET_ALL_REQUESTS: '/api/admin/getAllRequests',
   ADMIN_CREATE_COURSE: '/api/admin/course/create',
   ADMIN_ASSIGN_COURSE: '/api/admin/course/assign',
-  ADMIN_DELETE_COURSE: (courseId) => `/api/admin/course/${courseId}/delete`,
+  ADMIN_DELETE_COURSE: (courseId) => `/api/admin/course/delete/${courseId}`,
   ADMIN_UPDATE_COURSE: (courseId) => `/api/admin/course/update/${courseId}`,
   ADMIN_GET_ALL_COURSES: '/api/admin/getAllCourses',
   ADMIN_GET_COURSE: (courseId) => `/api/admin/getCourse/${courseId}`,
   ADMIN_GET_PROGRESSES: '/api/admin/getProgresses',
-  ADMIN_GET_EMPLOYEES_BY_POSITION: (position) => `/api/admin/getAllEmployeesByPosition/${position}`,
-  ADMIN_GET_FEEDBACKS: '/api/admin/getFeedbacks',
+  ADMIN_GET_EMPLOYEES_BY_POSITION: '/api/admin/getAllEmployeesByPosition',
   ADMIN_GET_FEEDBACK_FREQUENCIES: '/api/admin/getFeedbackFrequencies',
-  ADMIN_GET_FEEDBACK: (courseId) => `/api/admin/getFeedback/${courseId}`
+  ADMIN_GET_FEEDBACK: (courseId) => `/api/admin/getFeedback/${courseId}`,
+  ADMIN_GET_ALL_MANAGERS: '/api/admin/getAllManagers',
 };
 
 export const handleApiError = (error, setMessage) => {

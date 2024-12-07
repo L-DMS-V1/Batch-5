@@ -11,6 +11,7 @@ const ManagerDashboard = () => {
   const [showForm, setShowForm] = useState(false);
   const [positions, setPositions] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [filteredRequests, setFilteredRequests] = useState([]);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [formData, setFormData] = useState({
     courseName: '',
@@ -22,6 +23,11 @@ const ManagerDashboard = () => {
   });
   const [isReRequest, setIsReRequest] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showCreatedCourses, setShowCreatedCourses] = useState(false);
+  const [createdCourses, setCreatedCourses] = useState([]);
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showRequestDetails, setShowRequestDetails] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -35,6 +41,26 @@ const ManagerDashboard = () => {
     fetchRequests();
     fetchPositions();
   }, [navigate]);
+
+  useEffect(() => {
+    let sorted = [...requests].sort((a, b) => 
+      new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    
+    if (selectedStatus !== 'ALL') {
+      sorted = sorted.filter(r => r.status === selectedStatus);
+    }
+    
+    setFilteredRequests(sorted);
+  }, [requests, selectedStatus]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchRequests();
+    }, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchPositions = async () => {
     try {
@@ -55,6 +81,16 @@ const ManagerDashboard = () => {
     } catch (error) {
       console.error('Error fetching requests:', error);
       setMessage({ text: 'Error fetching requests', type: 'error' });
+    }
+  };
+
+  const fetchCreatedCourses = async () => {
+    try {
+      const response = await axiosInstance.get(ENDPOINTS.MANAGER_GET_CREATED_COURSES);
+      setCreatedCourses(response.data || []);
+    } catch (error) {
+      console.error('Error fetching created courses:', error);
+      setMessage({ text: 'Error fetching created courses', type: 'error' });
     }
   };
 
@@ -176,9 +212,21 @@ const ManagerDashboard = () => {
           ))}
         </div>
 
-        <div className="create-request-section">
-          <button className="create-button" onClick={() => setShowForm(!showForm)}>
-            <i className="fas fa-plus"></i> Create New Request
+        <div className="action-buttons">
+          <button 
+            className="create-button"
+            onClick={() => setShowForm(true)}
+          >
+            <i className="fas fa-plus"></i> Create Course Request
+          </button>
+          <button 
+            className="create-button"
+            onClick={() => {
+              setShowCreatedCourses(true);
+              fetchCreatedCourses();
+            }}
+          >
+            <i className="fas fa-book"></i> View Created Courses
           </button>
         </div>
 
@@ -252,8 +300,68 @@ const ManagerDashboard = () => {
           </div>
         )}
 
+        {/* Created Courses Modal */}
+        {showCreatedCourses && (
+          <div className="modal">
+            <div className="modal-content">
+              <h2>Created Courses</h2>
+              <div className="courses-list">
+                {createdCourses.map((course) => (
+                  <div key={course.courseId} className="course-card">
+                    <h3>{course.courseName}</h3>
+                    <p><strong>Key Concepts:</strong> {course.keyConcepts}</p>
+                    <p><strong>Duration:</strong> {course.duration}</p>
+                    <p><strong>Total Assigned:</strong> {course.totalAssignedEmployees}</p>
+                    <p><strong>Completed:</strong> {course.numberOfEmployeesCompleted}</p>
+                  </div>
+                ))}
+                {createdCourses.length === 0 && (
+                  <p className="no-data">No courses created yet.</p>
+                )}
+              </div>
+              <div className="modal-buttons">
+                <button 
+                  type="button" 
+                  className="btn-secondary"
+                  onClick={() => setShowCreatedCourses(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="requests-list-container">
           <h2>My Training Requests</h2>
+          
+          <div className="filter-section">
+            <button 
+              className={`filter-button ${selectedStatus === 'ALL' ? 'active' : ''}`}
+              onClick={() => setSelectedStatus('ALL')}
+            >
+              All
+            </button>
+            <button 
+              className={`filter-button ${selectedStatus === 'PENDING' ? 'active' : ''}`}
+              onClick={() => setSelectedStatus('PENDING')}
+            >
+              Pending
+            </button>
+            <button 
+              className={`filter-button ${selectedStatus === 'APPROVED' ? 'active' : ''}`}
+              onClick={() => setSelectedStatus('APPROVED')}
+            >
+              Approved
+            </button>
+            <button 
+              className={`filter-button ${selectedStatus === 'REJECTED' ? 'active' : ''}`}
+              onClick={() => setSelectedStatus('REJECTED')}
+            >
+              Rejected
+            </button>
+          </div>
+
           <div className="requests-table">
             <table>
               <thead>
@@ -263,11 +371,19 @@ const ManagerDashboard = () => {
                   <th>Position</th>
                   <th>Required Employees</th>
                   <th>Status</th>
+                  <th>Created At</th>
                 </tr>
               </thead>
               <tbody>
-                {requests.map((request) => (
-                  <tr key={request.id}>
+                {filteredRequests.map((request) => (
+                  <tr 
+                    key={request.id} 
+                    onClick={() => {
+                      setSelectedRequest(request);
+                      setShowRequestDetails(true);
+                    }}
+                    className="clickable-row"
+                  >
                     <td>{request.courseName}</td>
                     <td>{request.description}</td>
                     <td>{request.employeePosition}</td>
@@ -277,12 +393,75 @@ const ManagerDashboard = () => {
                         {request.status}
                       </span>
                     </td>
+                    <td>{new Date(request.createdAt).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+
+        {/* Request Details Modal */}
+        {showRequestDetails && selectedRequest && (
+          <div className="modal">
+            <div className="modal-content request-details">
+              <h2>Request Details</h2>
+              <div className="request-info">
+                <div className="info-group">
+                  <label>Course Name:</label>
+                  <p>{selectedRequest.courseName}</p>
+                </div>
+                <div className="info-group">
+                  <label>Description:</label>
+                  <p>{selectedRequest.description}</p>
+                </div>
+                <div className="info-group">
+                  <label>Key Concepts:</label>
+                  <p>{selectedRequest.concepts}</p>
+                </div>
+                <div className="info-group">
+                  <label>Duration:</label>
+                  <p>{selectedRequest.duration}</p>
+                </div>
+                <div className="info-group">
+                  <label>Employee Position:</label>
+                  <p>{selectedRequest.employeePosition}</p>
+                </div>
+                <div className="info-group">
+                  <label>Required Employees:</label>
+                  <p>{selectedRequest.requiredEmployees}</p>
+                </div>
+                <div className="info-group">
+                  <label>Status:</label>
+                  <p>
+                    <span className={`status-badge ${selectedRequest.status.toLowerCase()}`}>
+                      {selectedRequest.status}
+                    </span>
+                  </p>
+                </div>
+                <div className="info-group">
+                  <label>Created At:</label>
+                  <p>{new Date(selectedRequest.createdAt).toLocaleString()}</p>
+                </div>
+                {selectedRequest.adminComment && (
+                  <div className="info-group">
+                    <label>Admin Comment:</label>
+                    <p>{selectedRequest.adminComment}</p>
+                  </div>
+                )}
+              </div>
+              <div className="modal-buttons">
+                <button 
+                  type="button" 
+                  className="btn-secondary"
+                  onClick={() => setShowRequestDetails(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {message.text && (
           <div className={`message ${message.type}`}>
