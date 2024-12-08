@@ -82,7 +82,10 @@ public class EmployeeController {
     }
 
     @PostMapping("/feedback/{courseId}/{assignmentId}")
-    public ResponseEntity<?> feedBack(@RequestBody @Valid FeedBackDto feedBackDto, @PathVariable("courseId") Long courseId, @PathVariable("assignmentId") Long assignmentId, BindingResult bindingResult)
+    public ResponseEntity<?> feedBack(@RequestBody @Valid FeedBackDto feedBackDto,
+    		@PathVariable("courseId") Long courseId,
+    		@PathVariable("assignmentId") Long assignmentId,
+    		BindingResult bindingResult)
     {
         // Handle validation errors
         if (bindingResult.hasErrors()) {
@@ -92,7 +95,6 @@ public class EmployeeController {
             });
             return ResponseEntity.badRequest().body(errors);
         }
-        System.out.println("submitting feedback....");
         try {
             feedBackService.addFeedback(feedBackDto,courseId,assignmentId);
         } catch (RuntimeException e) {

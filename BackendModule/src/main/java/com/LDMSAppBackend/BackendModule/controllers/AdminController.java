@@ -215,7 +215,7 @@ public class AdminController {
           return ResponseEntity.ok(courseProgressDisplayDtos);
     }
 
-    @GetMapping("/getAllEmployeesByPosition")
+    @PostMapping("/getAllEmployeesByPosition")
     public ResponseEntity<?> getEmployeeByPosition(@RequestBody @Valid ManagerNameAndEmployeePosition managerNameAndEmployeePosition)
     {
         return ResponseEntity.ok(trainingRequestService.getEmployeesByPositionAndManagerName(managerNameAndEmployeePosition));

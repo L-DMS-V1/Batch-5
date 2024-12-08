@@ -214,8 +214,8 @@ public class CourseService {
 
     private CourseDisplayForManager mapToCoursesForManagerDto(Course course)
     {
-        long totalAssignments = courseAssignmentRepository.count();
-        long completedAssignments = courseAssignmentRepository.countByCourseStatus(CourseStatus.COMPLETED);
+        long totalAssignments = courseAssignmentRepository.countByCourse(course);
+        long completedAssignments = courseAssignmentRepository.countByCourseAndCourseStatus(course,CourseStatus.COMPLETED);
         return new CourseDisplayForManager(
                 course.getCourseId(), course.getCourseName(),course.getKeyConcepts(), course.getDuration(),totalAssignments,completedAssignments
         );
