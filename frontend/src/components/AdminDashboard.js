@@ -1,5 +1,5 @@
 // src/components/AdminDashboard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { axiosInstance, ENDPOINTS } from '../config/api';
 import '../styles/Dashboard.css';
@@ -36,7 +36,8 @@ const AdminDashboard = () => {
     keyConcepts: '',
     duration: '',
     resources: [{ resourceName: '', resourceLink: '' }],
-    outcomes: ''
+    outcomes: '',
+    managerName: '' // Add this field
   });
   const [assignCourseForm, setAssignCourseForm] = useState({
     courseId: '',
@@ -243,7 +244,7 @@ const AdminDashboard = () => {
         {},
         { 
           headers: { 
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`, 
             'Content-Type': 'application/json'
           } 
         }
@@ -255,20 +256,29 @@ const AdminDashboard = () => {
         fetchAcceptedRequests()
       ]);
 
-      // Find the accepted request and show course creation form
-      const acceptedRequest = requests.find(req => req.id === id);
-      if (acceptedRequest) {
-        setSelectedRequest(acceptedRequest);
-        setCourseForm({
-          courseId: '',
-          courseName: '',
-          keyConcepts: '',
-          duration: '',
-          resources: [{ resourceName: '', resourceLink: '' }],
-          outcomes: ''
-        });
-        setShowCourseForm(true);
+      // Get the selected request details
+      const request = requests.find(r => r.id === id);
+      console.log('Found request:', request); // Add this log to see full request object
+      if (!request || !request.managerName) {
+        setMessage({ text: 'Invalid request or missing manager information', type: 'error' });
+        return;
       }
+      setSelectedRequest(request);
+
+      // Pre-fill course form with request data
+      const updatedForm = {
+        courseName: request.courseName || '',
+        keyConcepts: request.concepts || '',
+        duration: request.duration || '',
+        resources: [{ resourceName: '', resourceLink: '' }],
+        outcomes: '',
+        managerName: request.managerName, // Add manager name to course form
+        requestId: request.id // Keep track of request ID
+      };
+      console.log('Setting course form with data:', updatedForm);
+      setCourseForm(updatedForm);
+
+      setShowCourseForm(true);
     } catch (error) {
       console.error('Error accepting request:', error);
       setMessage({ 
@@ -389,12 +399,28 @@ const AdminDashboard = () => {
         keyConcepts: courseForm.keyConcepts.trim(),
         duration: courseForm.duration.trim(),
         outcomes: courseForm.outcomes.trim(),
+        managerName: courseForm.managerName,
         resources: validResources.map(resource => ({
-          resourceLinks: resource.resourceLink.trim(),
-          resourceNames: resource.resourceName.trim()
+          resourceNames: resource.resourceName,
+          resourceLinks: resource.resourceLink
         })),
-        managerName: selectedRequest?.managerName || localStorage.getItem('userName')
       };
+      console.log('Course form with manager:', courseForm); // Add this log
+      console.log('Transformed form:', transformedCourseForm);
+
+      // If manager name is missing, try to get it from requests
+      if (!transformedCourseForm.managerName && courseForm.requestId) {
+        const originalRequest = requests.find(r => r.id === courseForm.requestId);
+        if (originalRequest?.managerName) {
+          transformedCourseForm.managerName = originalRequest.managerName;
+          console.log('Retrieved manager from original request:', transformedCourseForm);
+        }
+      }
+
+      if (!transformedCourseForm.managerName) {
+        setMessage({ text: 'Manager information is missing', type: 'error' });
+        return;
+      }
 
       console.log('Submitting transformed course form:', transformedCourseForm);
 
@@ -425,6 +451,7 @@ const AdminDashboard = () => {
             courseId: courseId
           }));
           
+          // If we have the employee position from the request, fetch employees and show assign form
           if (selectedRequest?.employeePosition) {
             await fetchEmployeesByPosition(selectedRequest.employeePosition);
             setShowAssignForm(true);
@@ -441,7 +468,8 @@ const AdminDashboard = () => {
         keyConcepts: '',
         duration: '',
         resources: [{ resourceName: '', resourceLink: '' }],
-        outcomes: ''
+        outcomes: '',
+        managerName: '' // Reset managerName
       });
       setShowCourseForm(false);
       setSelectedCourseForUpdate(null);
@@ -881,7 +909,15 @@ const AdminDashboard = () => {
       const token = localStorage.getItem('token');
       const role = localStorage.getItem('role');
       
-      if (!token || role?.toLowerCase() !== 'admin') {
+      console.log('Delete Course Request Debug:', {
+        courseId,
+        token: token ? 'Token Present' : 'No Token',
+        tokenLength: token ? token.length : 'N/A',
+        role,
+        deleteEndpoint: ENDPOINTS.ADMIN_DELETE_COURSE(courseId)
+      });
+
+      if (!token || !role || role.toUpperCase() !== 'ADMIN') {
         setMessage({ text: 'Authentication error. Please check your session.', type: 'error' });
         return;
       }
@@ -891,7 +927,7 @@ const AdminDashboard = () => {
         return;
       }
 
-      await axiosInstance.delete(
+      const response = await axiosInstance.delete(
         ENDPOINTS.ADMIN_DELETE_COURSE(courseId),
         { 
           headers: { 
@@ -901,6 +937,8 @@ const AdminDashboard = () => {
         }
       );
 
+      console.log('Delete Course Response:', response);
+
       setMessage({ text: 'Course deleted successfully', type: 'success' });
       // Reset any related state
       setSelectedCourseForUpdate(null);
@@ -908,7 +946,10 @@ const AdminDashboard = () => {
       // Refresh the course list
       await fetchInitialData();
     } catch (error) {
-      console.error('Error deleting course:', error);
+      console.error('Full Error Object:', error);
+      console.error('Error Response:', error.response);
+      console.error('Error Config:', error.config);
+      
       setMessage({ 
         text: error.response?.data?.message || 'Error deleting course. Please try again.', 
         type: 'error' 
@@ -1063,6 +1104,36 @@ const AdminDashboard = () => {
     );
   };
 
+  const stats = [
+    {
+      title: 'Total Requests',
+      value: requests.length,
+      icon: 'fa-list-alt'
+    },
+    {
+      title: 'Total Courses',
+      value: createdCourses ? createdCourses.length : 0,
+      icon: 'fa-book'
+    },
+    {
+      title: 'Pending Requests',
+      value: requests.filter(r => r.status === 'PENDING').length,
+      icon: 'fa-clock'
+    }
+  ];
+
+  const logDashboardStats = useCallback(() => {
+    console.log('Dashboard Stats Debug:', {
+      requestsLength: requests.length,
+      createdCoursesLength: createdCourses.length,
+      createdCoursesData: createdCourses
+    });
+  }, [requests, createdCourses]);
+
+  useEffect(() => {
+    logDashboardStats();
+  }, [logDashboardStats]);
+
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
@@ -1090,7 +1161,7 @@ const AdminDashboard = () => {
           <div className="stat-card">
             <i className="fas fa-book stat-icon"></i>
             <h3>Total Courses</h3>
-            <p className="stat-number">{courses.length}</p>
+            <p className="stat-number">{createdCourses ? createdCourses.length : 0}</p>
           </div>
           <div className="stat-card">
             <i className="fas fa-clock stat-icon"></i>
@@ -1340,54 +1411,58 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {requests.map((request) => {
-                  // Find if a course exists for this request
-                  const courseExists = courses.some(course => course.courseName === request.courseName);
-                  
-                  return (
-                    <tr key={request.id}>
-                      <td>{request.courseName}</td>
-                      <td>{request.description}</td>
-                      <td>{request.employeePosition}</td>
-                      <td>{request.requiredEmployees}</td>
-                      <td>{request.status}</td>
-                      <td>
-                        {request.status === 'PENDING' && (
-                          <>
-                            <button className="admin-action-button accept-button" onClick={() => handleAcceptRequest(request.id)}>Accept</button>
-                            <button className="admin-action-button reject-button" onClick={() => handleRejectRequest(request.id)}>Reject</button>
-                          </>
-                        )}
-                        {request.status === 'REJECTED' && (
-                          <button 
-                            className="admin-action-button re-evaluate-button"
-                            onClick={() => handleAcceptRequest(request.id)}
-                          >
-                            Re-evaluate
-                          </button>
-                        )}
-                        {request.status === 'APPROVED' && !courseExists && (
-                          <button 
-                            className="admin-action-button create-course-button"
-                            onClick={() => handleCreateCourseClick(request)}
-                          >
-                            Create Course
-                          </button>
-                        )}
-                        {request.status === 'APPROVED' && courseExists && (
-                          <>
+                {requests
+                  .filter(request => 
+                    statusFilter === 'ALL' || request.status === statusFilter
+                  )
+                  .map((request) => {
+                    // Find if a course exists for this request
+                    const courseExists = createdCourses.some(course => course.courseName === request.courseName);
+                    
+                    return (
+                      <tr key={request.id}>
+                        <td>{request.courseName}</td>
+                        <td>{request.description}</td>
+                        <td>{request.employeePosition}</td>
+                        <td>{request.requiredEmployees}</td>
+                        <td>{request.status}</td>
+                        <td>
+                          {request.status === 'PENDING' && (
+                            <>
+                              <button className="admin-action-button accept-button" onClick={() => handleAcceptRequest(request.id)}>Accept</button>
+                              <button className="admin-action-button reject-button" onClick={() => handleRejectRequest(request.id)}>Reject</button>
+                            </>
+                          )}
+                          {request.status === 'REJECTED' && (
                             <button 
-                              className="admin-action-button"
-                              onClick={() => handleDeleteCourse(courses.find(c => c.courseName === request.courseName)?.id)}
+                              className="admin-action-button re-evaluate-button"
+                              onClick={() => handleAcceptRequest(request.id)}
                             >
-                              Delete Course
+                              Re-evaluate
                             </button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                          )}
+                          {request.status === 'APPROVED' && !courseExists && (
+                            <button 
+                              className="admin-action-button create-course-button"
+                              onClick={() => handleCreateCourseClick(request)}
+                            >
+                              Create Course
+                            </button>
+                          )}
+                          {request.status === 'APPROVED' && courseExists && (
+                            <>
+                              <button 
+                                className="admin-action-button"
+                                onClick={() => handleDeleteCourse(createdCourses.find(c => c.courseName === request.courseName)?.courseId)}
+                              >
+                                Delete Course
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>
@@ -1600,7 +1675,8 @@ const AdminDashboard = () => {
                         keyConcepts: '',
                         duration: '',
                         resources: [{ resourceName: '', resourceLink: '' }],
-                        outcomes: ''
+                        outcomes: '',
+                        managerName: '' // Reset managerName
                       });
                     }}
                   >

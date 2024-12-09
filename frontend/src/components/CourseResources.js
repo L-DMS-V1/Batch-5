@@ -227,7 +227,7 @@ const CourseResources = ({ courseId, onBack, onResourceComplete }) => {
     <div className="course-resources-container">
       <div className="resources-header">
         <h2>{courseData.courseName} - Resources</h2>
-        <button className="back-button" onClick={onBack}>
+        <button className="course-back-button" onClick={onBack}>
           Back to Courses
         </button>
       </div>

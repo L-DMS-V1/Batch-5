@@ -1,5 +1,5 @@
 // src/components/ManagerDashboard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { axiosInstance, ENDPOINTS, handleApiError } from '../config/api';
@@ -29,6 +29,18 @@ const ManagerDashboard = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showRequestDetails, setShowRequestDetails] = useState(false);
 
+  const logDashboardStats = useCallback(() => {
+    console.log('Dashboard Stats Debug:', {
+      requestsLength: requests.length,
+      requestsData: requests,
+      pendingRequestsLength: requests.filter(r => r.status === 'PENDING').length
+    });
+  }, [requests]);
+
+  useEffect(() => {
+    logDashboardStats();
+  }, [logDashboardStats]);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
@@ -43,9 +55,12 @@ const ManagerDashboard = () => {
   }, [navigate]);
 
   useEffect(() => {
-    let sorted = [...requests].sort((a, b) => 
-      new Date(b.createdAt) - new Date(a.createdAt)
-    );
+    let sorted = [...requests].sort((a, b) => {
+      // Use current timestamp if createdAt is undefined
+      const dateA = a.createdAt ? new Date(a.createdAt) : new Date();
+      const dateB = b.createdAt ? new Date(b.createdAt) : new Date();
+      return dateB - dateA;
+    });
     
     if (selectedStatus !== 'ALL') {
       sorted = sorted.filter(r => r.status === selectedStatus);
@@ -110,14 +125,11 @@ const ManagerDashboard = () => {
         isReRequest: isReRequest
       };
 
-      console.log('Submitting request:', requestPayload);
-
       const response = await axiosInstance.post(
         ENDPOINTS.MANAGER_CREATE_REQUEST,
         requestPayload
       );
 
-      console.log('Request successful:', response.data);
       setMessage({ text: 'Request submitted successfully!', type: 'success' });
       setShowForm(false);
       setFormData({
@@ -165,6 +177,17 @@ const ManagerDashboard = () => {
     navigate('/login');
   };
 
+  const formatDate = (dateString) => {
+    // If no date is provided, use the current date
+    const date = dateString ? new Date(dateString) : new Date();
+    
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   // Calculate stats for dashboard
   const stats = [
     {
@@ -179,7 +202,7 @@ const ManagerDashboard = () => {
     },
     {
       title: 'Completed',
-      value: requests.filter(r => r.status === 'COMPLETED').length,
+      value: requests.filter(r => r.status === 'APPROVED').length,
       icon: 'fa-check-circle'
     }
   ];
@@ -393,7 +416,7 @@ const ManagerDashboard = () => {
                         {request.status}
                       </span>
                     </td>
-                    <td>{new Date(request.createdAt).toLocaleDateString()}</td>
+                    <td>{formatDate(request.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -441,7 +464,7 @@ const ManagerDashboard = () => {
                 </div>
                 <div className="info-group">
                   <label>Created At:</label>
-                  <p>{new Date(selectedRequest.createdAt).toLocaleString()}</p>
+                  <p>{formatDate(selectedRequest.createdAt)}</p>
                 </div>
                 {selectedRequest.adminComment && (
                   <div className="info-group">

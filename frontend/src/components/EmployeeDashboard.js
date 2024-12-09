@@ -24,7 +24,21 @@ const EmployeeDashboard = () => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(ENDPOINTS.EMPLOYEE_GET_COURSES);
-      setAssignedCourses(response.data);
+      
+      // Fetch detailed course data for each course
+      const coursesWithDetails = await Promise.all(
+        response.data.map(async (course) => {
+          try {
+            const courseDetailResponse = await axiosInstance.get(ENDPOINTS.EMPLOYEE_GET_COURSE(course.courseId));
+            return courseDetailResponse.data;
+          } catch (error) {
+            console.error(`Error fetching details for course ${course.courseId}:`, error);
+            return course; // fallback to original course data
+          }
+        })
+      );
+
+      setAssignedCourses(coursesWithDetails);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching assigned courses:', error);
@@ -87,9 +101,20 @@ const EmployeeDashboard = () => {
                 <i className="fas fa-check-circle stat-icon"></i>
                 <h3>Completed Courses</h3>
                 <p className="stat-number">
-                  {assignedCourses.filter(course => 
-                    course.resourceLinksAndStatuses?.every(r => r.completed)
-                  ).length}
+                  {(() => {
+                    console.log('Full Assigned Courses Data:', JSON.stringify(assignedCourses, null, 2));
+                    const completedCourses = assignedCourses.filter(course => {
+                      console.log(`Course ${course.courseName} Resource Links:`, 
+                        course.resourceLinksAndStatuses?.map(r => ({
+                          link: r.resourceLink, 
+                          completed: r.completed
+                        }))
+                      );
+                      return course.resourceLinksAndStatuses?.every(r => r.completed);
+                    });
+                    console.log('Completed Courses:', completedCourses);
+                    return completedCourses.length;
+                  })()}
                 </p>
               </div>
 
@@ -103,6 +128,8 @@ const EmployeeDashboard = () => {
                   ).length}
                 </p>
               </div>
+
+              
             </div>
 
             <div className="courses-section">

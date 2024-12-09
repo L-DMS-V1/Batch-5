@@ -106,7 +106,7 @@ export const ENDPOINTS = {
   ADMIN_GET_ALL_REQUESTS: '/api/admin/getAllRequests',
   ADMIN_CREATE_COURSE: '/api/admin/course/create',
   ADMIN_ASSIGN_COURSE: '/api/admin/course/assign',
-  ADMIN_DELETE_COURSE: (courseId) => `/api/admin/course/delete/${courseId}`,
+  ADMIN_DELETE_COURSE: (courseId) => `/api/admin/course/${courseId}/delete`,
   ADMIN_UPDATE_COURSE: (courseId) => `/api/admin/course/update/${courseId}`,
   ADMIN_GET_ALL_COURSES: '/api/admin/getAllCourses',
   ADMIN_GET_COURSE: (courseId) => `/api/admin/getCourse/${courseId}`,

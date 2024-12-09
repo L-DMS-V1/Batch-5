@@ -12,7 +12,7 @@
 
 .resources-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
@@ -24,9 +24,10 @@
 .resources-header h2 {
   margin: 0;
   color: #333;
+  margin-right: auto;
 }
 
-.back-button {
+.course-back-button {
   padding: 8px 16px;
   background-color: #6c757d;
   color: white;
@@ -38,7 +39,7 @@
   z-index: 1001;
 }
 
-.back-button:hover {
+.course-back-button:hover {
   background-color: #5a6268;
 }
 
