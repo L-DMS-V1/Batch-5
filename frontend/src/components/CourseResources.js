@@ -198,6 +198,10 @@ const CourseResources = ({ courseId, onBack, onResourceComplete }) => {
     }
   };
 
+  const handleCloseFeedbackForm = () => {
+    setShowFeedback(false);
+  };
+
   const fetchCourseResources = async () => {
     try {
       setLoading(true);
@@ -296,6 +300,12 @@ const CourseResources = ({ courseId, onBack, onResourceComplete }) => {
         <div className="feedback-section">
           <h3>Course Completed! Please provide your feedback</h3>
           <CourseFeedback onSubmit={handleFeedbackSubmit} />
+          <button 
+            onClick={handleCloseFeedbackForm}
+            className="mt-4 bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
+          >
+            Close Feedback Form
+          </button>
         </div>
       )}
     </div>
